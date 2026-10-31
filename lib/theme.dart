@@ -43,6 +43,8 @@ ThemeData kuzuTema() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
+      hoverColor: Colors.white,
+      focusColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Renk.cizgi),

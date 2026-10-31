@@ -21,6 +21,8 @@ jobs:
           cache: true
       - name: Eksik platform dosyalarını oluştur
         run: flutter create . --platforms=web --project-name kuzu_deposu --org com.kuzudeposu
+      - name: Marka (ikon, manifest, başlık)
+        run: python3 tool/marka_uygula.py
       - run: flutter pub get
       - name: Kod analizi (çıktıyı not olarak göster)
         continue-on-error: true

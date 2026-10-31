@@ -123,6 +123,15 @@ class _SellScreenState extends State<SellScreen> {
     }
   }
 
+  Widget _bolum(String t, {double ust = 22}) => Padding(
+        padding: EdgeInsets.only(top: ust, bottom: 10),
+        child: Row(children: [
+          Container(width: 4, height: 18, decoration: BoxDecoration(color: Renk.kiremit, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(width: 8),
+          Text(t, style: baslik(18)),
+        ]),
+      );
+
   Widget _etiket(String t) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(t, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)));
 
   @override
@@ -146,6 +155,7 @@ class _SellScreenState extends State<SellScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
+          _bolum('Hayvan bilgileri', ust: 4),
           _etiket('Hayvan türü'),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -233,7 +243,7 @@ class _SellScreenState extends State<SellScreen> {
               Cip('Adet adet de satılır', _satis == 'adet_adet', () => setState(() => _satis = 'adet_adet')),
             ]),
           ],
-          const SizedBox(height: 14),
+          _bolum('Fiyat ve konum'),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -268,7 +278,7 @@ class _SellScreenState extends State<SellScreen> {
               Expanded(child: TextField(controller: _ilce, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'İlçe'))),
             ],
           ),
-          const SizedBox(height: 14),
+          _bolum('Amaç, belge ve teslimat'),
           _etiket('Satış amacı (isteğe bağlı)'),
           Wrap(runSpacing: 8, children: [
             for (final e in amacEtiket.entries) Cip(e.value, _amac == e.key, () => setState(() => _amac = _amac == e.key ? null : e.key)),
@@ -292,7 +302,7 @@ class _SellScreenState extends State<SellScreen> {
             title: const Text('Pazarlık payı var', style: TextStyle(fontWeight: FontWeight.w700)),
             subtitle: const Text('Alıcılar sana mesajla teklif gönderebilir'),
           ),
-          const SizedBox(height: 6),
+          _bolum('Açıklama ve fotoğraflar'),
           TextField(controller: _acik, maxLines: 3, maxLength: 2000, decoration: const InputDecoration(labelText: 'Açıklama (isteğe bağlı)', alignLabelWithHint: true)),
           const SizedBox(height: 6),
           Container(
