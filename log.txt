@@ -1,0 +1,4 @@
+TIKLANAMADI Yetiştirici
+TIKLANAMADI Devam
+TIKLANAMADI Kaydet
+SON Seni tanıyalım Alıcılar ilanında adını ve ilçeni görür. Telefon numaran gizli kalır. Ben bir Başla Çıkış yap
