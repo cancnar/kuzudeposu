@@ -293,6 +293,8 @@ class Bos extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const Opacity(opacity: .5, child: Logo(boyut: 52)),
+              const SizedBox(height: 14),
               Text(baslikYazi, style: baslik(22), textAlign: TextAlign.center),
               const SizedBox(height: 8),
               Text(aciklama, style: const TextStyle(color: Renk.soluk, height: 1.5), textAlign: TextAlign.center),

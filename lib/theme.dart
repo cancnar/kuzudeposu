@@ -77,6 +77,12 @@ ThemeData kuzuTema() {
       trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Renk.yesil : Renk.cizgi),
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
     ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Renk.yesil : Colors.transparent),
+      checkColor: WidgetStateProperty.all(Colors.white),
+      side: const BorderSide(color: Renk.soluk, width: 1.6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+    ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Renk.yesil : Colors.white),

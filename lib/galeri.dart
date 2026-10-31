@@ -3,6 +3,7 @@ import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
+import 'widgets.dart';
 
 /// Ekran genişliğine oranlı (4:3) kaydırılabilir fotoğraf galerisi.
 /// Dokununca tam ekran görüntüleyici açılır.
@@ -30,9 +31,11 @@ class _FotoGaleriState extends State<FotoGaleri> {
   ImageProvider _sag(String u) => widget.saglayici != null ? widget.saglayici!(u) : NetworkImage(u);
 
   Widget _bos() => Container(
-        color: Renk.cizgi,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFEFE9D2), Color(0xFFDCE6D3)]),
+        ),
         alignment: Alignment.center,
-        child: Icon(Icons.pets, size: 48, color: Renk.soluk.withOpacity(.5)),
+        child: const Opacity(opacity: .55, child: Logo(boyut: 72)),
       );
 
   void _git(int p) {

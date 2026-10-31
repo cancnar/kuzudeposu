@@ -23,6 +23,7 @@ async function yaz(p, etiket, deger) {
   try {
     const el = p.getByLabel(etiket, { exact: false }).first();
     await el.click({ timeout: 5000, force: true });
+    await p.waitForTimeout(900);
     await p.keyboard.type(deger, { delay: 30 });
     await p.waitForTimeout(500);
     return true;
@@ -83,10 +84,11 @@ async function geri(p) {
   await tikla(p, 'numaram ile giriş', 2500);
   await snap(p, 'telefon');
   await yaz(p, 'Cep telefonu', '5559999999');
-  await tikla(p, 'okudum', 800);
+  await p.mouse.click(44, 505); await p.waitForTimeout(600);
   await snap(p, 'telefon_dolu');
   await tikla(p, 'Kodu gönder', 4000);
   await snap(p, 'otp');
+  await p.mouse.click(195, 300); await p.waitForTimeout(900);
   await p.keyboard.type('123456', { delay: 60 });
   await p.waitForTimeout(500);
   await tikla(p, 'Doğrula', 5000);

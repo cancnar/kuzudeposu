@@ -80,6 +80,8 @@ class _PhoneScreenState extends State<PhoneScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const Align(alignment: Alignment.centerLeft, child: Logo(boyut: 46)),
+                  const SizedBox(height: 16),
                   Text('Telefon numaranı gir', style: baslik(30)),
                   const SizedBox(height: 8),
                   const Text('Sana SMS ile 6 haneli bir doğrulama kodu göndereceğiz. Şifre gerekmez.',

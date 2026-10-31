@@ -74,6 +74,8 @@ class _OtpScreenState extends State<OtpScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const Align(alignment: Alignment.centerLeft, child: Logo(boyut: 46)),
+                  const SizedBox(height: 16),
                   Text('Doğrulama kodunu gir', style: baslik(30)),
                   const SizedBox(height: 8),
                   Text('${maskeMetin(widget.telefon)} numarasına 6 haneli kod gönderdik.',
