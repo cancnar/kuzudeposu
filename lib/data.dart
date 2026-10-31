@@ -4,7 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models.dart';
 
-SupabaseClient get db => Supabase.instance.client;
+/// Testlerde gerçek istemci buraya atanır.
+SupabaseClient? testIstemci;
+SupabaseClient get db => testIstemci ?? Supabase.instance.client;
 String? get uid => db.auth.currentUser?.id;
 
 const _saticiEmbed = 'seller:profiles!seller_id(full_name,rating_avg,rating_count)';
