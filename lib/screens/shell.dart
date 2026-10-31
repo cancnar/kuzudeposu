@@ -10,6 +10,7 @@ import 'messages_screen.dart';
 import 'phone_screen.dart';
 import 'profile_screen.dart';
 import 'sell_screen.dart';
+import 'talepler_screen.dart';
 
 /// Alt menülü ana iskelet.
 class Shell extends StatelessWidget {
@@ -23,9 +24,42 @@ class Shell extends StatelessWidget {
       };
 
   Future<void> _ilanVer(BuildContext c) async {
+    final secim = await showModalBottomSheet<String>(
+      context: c,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Ne yapmak istiyorsun?', style: baslik(21)),
+              const SizedBox(height: 12),
+              FilledButton(onPressed: () => Navigator.pop(ctx, 'sat'), child: const Text('Hayvan satıyorum')),
+              const SizedBox(height: 4),
+              const Text('İlan ver: fotoğraf, fiyat ve bilgilerle.', style: TextStyle(color: Renk.soluk, fontSize: 13)),
+              const SizedBox(height: 14),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52), side: const BorderSide(color: Renk.yesil)),
+                onPressed: () => Navigator.pop(ctx, 'ara'),
+                child: const Text('Hayvan arıyorum'),
+              ),
+              const SizedBox(height: 4),
+              const Text('Talep yayınla: satıcılar sana uygun ilanını önerir.', style: TextStyle(color: Renk.soluk, fontSize: 13)),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (secim == null || !c.mounted) return;
+    if (secim == 'ara') {
+      await talepVerGit(c);
+      return;
+    }
     if (!await girisGerekli(c)) return;
     if (!c.mounted) return;
     await Navigator.of(c).push(MaterialPageRoute(builder: (_) => const SellScreen()));
+
   }
 
   @override

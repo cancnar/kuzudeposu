@@ -20,6 +20,7 @@ class AppState extends ChangeNotifier {
   int ilanSurum = 0;
   String yazi = 'Normal';
   int sekme = 0;
+  int anaSekme = 0; // 0: ilanlar, 1: alıcı talepleri
   final Map<String, bool> tercih = {
     'msg': true,
     'newl': true,

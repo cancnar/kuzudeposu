@@ -7,7 +7,6 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'detail_screen.dart';
 import 'settings_screens.dart';
-import 'talepler_screen.dart';
 import 'shell.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -69,7 +68,6 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             children: [
               Satir('İlanlarım', onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MineScreen()))),
-              Satir('Alıcı talepleri', onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaleplerScreen()))),
               Satir('Favorilerim', onTap: () {
                 app.sekme = 1;
                 app.yenile();

@@ -51,38 +51,57 @@ class TalepKarti extends StatelessWidget {
   }
 }
 
-class TaleplerScreen extends StatefulWidget {
-  const TaleplerScreen({super.key});
-
-  @override
-  State<TaleplerScreen> createState() => _TaleplerScreenState();
+/// Talep verme akışını açar; yayınlanırsa ana sayfada talepler sekmesine geçer.
+Future<void> talepVerGit(BuildContext context) async {
+  if (!await girisGerekli(context)) return;
+  if (!context.mounted) return;
+  final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => const TalepVerScreen()));
+  if (ok == true) {
+    app.anaSekme = 1;
+    app.sekme = 0;
+    app.ilanlariYenile();
+  }
 }
 
-class _TaleplerScreenState extends State<TaleplerScreen> {
+/// Talep listesi (gömülebilir, kaydırmaz): tür süzgeci, taleplerim, öner / kapat.
+class TaleplerGovdesi extends StatefulWidget {
+  const TaleplerGovdesi({super.key});
+
+  @override
+  State<TaleplerGovdesi> createState() => _TaleplerGovdesiState();
+}
+
+class _TaleplerGovdesiState extends State<TaleplerGovdesi> {
   String _tur = 'Hepsi';
   bool _benim = false;
   Future<List<Talep>>? _f;
+  int _surum = -1;
 
   @override
   void initState() {
     super.initState();
-    _yukle();
+    _surum = app.ilanSurum;
+    app.addListener(_degisti);
+    _f = talepler();
+  }
+
+  @override
+  void dispose() {
+    app.removeListener(_degisti);
+    super.dispose();
+  }
+
+  void _degisti() {
+    if (mounted && app.ilanSurum != _surum) {
+      _surum = app.ilanSurum;
+      _yukle();
+    }
   }
 
   void _yukle() {
     setState(() {
       _f = _benim ? taleplerim() : talepler(tur: _tur == 'Hepsi' ? null : turKod[_tur]);
     });
-  }
-
-  Future<void> _yeni() async {
-    if (!await girisGerekli(context)) return;
-    if (!mounted) return;
-    final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => const TalepVerScreen()));
-    if (ok == true) {
-      _benim = true;
-      _yukle();
-    }
   }
 
   Future<void> _oner(Talep t) async {
@@ -126,7 +145,7 @@ class _TaleplerScreenState extends State<TaleplerScreen> {
       if (!mounted) return;
       await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatScreen(konusmaId: k)));
     } catch (e) {
-      if (mounted) bildir(context, 'Öneri gönderilemedi: $e (006_talepler.sql çalıştırıldı mı?)');
+      if (mounted) bildir(context, 'Öneri gönderilemedi: $e');
     }
   }
 
@@ -143,67 +162,71 @@ class _TaleplerScreenState extends State<TaleplerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Alıcı talepleri')),
-      bottomNavigationBar: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-        child: SafeArea(top: false, child: FilledButton(onPressed: _yeni, child: const Text('Talep yayınla'))),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async => _yukle(),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            const Text('Alıcılar aradıklarını yayınlar, satıcılar uygun ilanlarını önerir.', style: TextStyle(color: Renk.soluk, height: 1.4)),
-            const SizedBox(height: 10),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final t in ['Hepsi', ...turSecenekleri])
-                    Cip(t, !_benim && _tur == t, () {
-                      _benim = false;
-                      _tur = t;
-                      _yukle();
-                    }),
-                  Cip('Taleplerim', _benim, () {
-                    if (db.auth.currentSession == null) {
-                      girisGerekli(context);
-                      return;
-                    }
-                    _benim = true;
-                    _yukle();
-                  }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            FutureBuilder<List<Talep>>(
-              future: _f,
-              builder: (context, s) {
-                if (s.connectionState != ConnectionState.done) return yukleniyor();
-                if (s.hasError) return HataKutusu(s.error!, tekrar: _yukle);
-                final l = s.data!;
-                if (l.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 40),
-                    child: Text(_benim ? 'Henüz talebin yok.' : 'Şu an açık talep yok.', textAlign: TextAlign.center, style: const TextStyle(color: Renk.soluk)),
-                  );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Alıcılar aradıklarını yayınlar, satıcılar uygun ilanlarını önerir.', style: TextStyle(color: Renk.soluk, height: 1.4)),
+        const SizedBox(height: 10),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final t in ['Hepsi', ...turSecenekleri])
+                Cip(t, !_benim && _tur == t, () {
+                  _benim = false;
+                  _tur = t;
+                  _yukle();
+                }),
+              Cip('Taleplerim', _benim, () {
+                if (db.auth.currentSession == null) {
+                  girisGerekli(context);
+                  return;
                 }
-                return Column(
-                  children: [
-                    for (final t in l)
-                      TalepKarti(talep: t, benim: t.aliciId == uid, onOner: () => _oner(t), onKapat: () => _kapat(t)),
-                  ],
-                );
-              },
-            ),
-          ],
+                _benim = true;
+                _yukle();
+              }),
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: 10),
+        FutureBuilder<List<Talep>>(
+          future: _f,
+          builder: (context, s) {
+            if (s.connectionState != ConnectionState.done) return yukleniyor();
+            if (s.hasError) return HataKutusu(s.error!, tekrar: _yukle);
+            final l = s.data!;
+            if (l.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: Text(_benim ? 'Henüz talebin yok.' : 'Şu an açık talep yok.', style: const TextStyle(color: Renk.soluk))),
+              );
+            }
+            return Column(
+              children: [
+                for (final t in l) TalepKarti(talep: t, benim: t.aliciId == uid, onOner: () => _oner(t), onKapat: () => _kapat(t)),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
+}
+
+/// Bildirimden açılan tam sayfa görünüm.
+class TaleplerScreen extends StatelessWidget {
+  const TaleplerScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Alıcı talepleri')),
+        bottomNavigationBar: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: SafeArea(top: false, child: FilledButton(onPressed: () => talepVerGit(context), child: const Text('Talep yayınla'))),
+        ),
+        body: ListView(padding: const EdgeInsets.all(16), children: const [TaleplerGovdesi()]),
+      );
 }
 
 class TalepVerScreen extends StatefulWidget {

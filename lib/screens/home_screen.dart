@@ -151,6 +151,23 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          SegmentedButton<int>(
+            showSelectedIcon: false,
+            segments: const [
+              ButtonSegment(value: 0, label: Text('İlanlar')),
+              ButtonSegment(value: 1, label: Text('Alıcı talepleri')),
+            ],
+            selected: {app.anaSekme},
+            onSelectionChanged: (v) {
+              app.anaSekme = v.first;
+              app.yenile();
+            },
+          ),
+          if (app.anaSekme == 1) ...[
+            const SizedBox(height: 12),
+            const TaleplerGovdesi(),
+          ] else ...[
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -205,18 +222,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           const SizedBox(height: 8),
-          InkWell(
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaleplerScreen())),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(color: acikYesil, borderRadius: BorderRadius.circular(12)),
-              child: const Row(children: [
-                Expanded(child: Text('Aradığını bulamadın mı? Alıcı taleplerine bak veya talep yayınla', style: TextStyle(color: Renk.yesil, fontWeight: FontWeight.w700, fontSize: 13))),
-                Icon(Icons.chevron_right, color: Renk.yesil),
-              ]),
-            ),
-          ),
           Text('${liste?.length ?? '…'} ilan · ${f['sirala']}', style: const TextStyle(color: Renk.soluk, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           if (_hata != null)
@@ -246,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   FilledButton(onPressed: _kaydet, child: const Text('İlan çıkınca haber ver')),
                   const SizedBox(height: 10),
                   TextButton(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaleplerScreen())),
+                    onPressed: () => talepVerGit(context),
                     child: const Text('Ya da alıcı talebi yayınla'),
                   ),
                 ],
@@ -260,6 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onFavori: () => _favori(i),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetailScreen(ilan: i))),
               ),
+          ],
         ],
       ),
     );
