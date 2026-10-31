@@ -11,7 +11,9 @@ async function snap(p, ad) {
 }
 async function tikla(p, metin, ms = 2000) {
   try {
-    await p.getByText(metin, { exact: false }).first().click({ timeout: 5000, force: true });
+    const r = p.getByRole('button', { name: metin });
+    if (await r.count()) await r.first().click({ timeout: 5000, force: true });
+    else await p.getByText(metin, { exact: false }).first().click({ timeout: 5000, force: true });
     await p.waitForTimeout(ms);
     return true;
   } catch (e) {
@@ -86,10 +88,11 @@ async function geri(p) {
   await yaz(p, 'Cep telefonu', '5559999999');
   await p.mouse.click(44, 505); await p.waitForTimeout(600);
   await snap(p, 'telefon_dolu');
-  await tikla(p, 'Kodu gönder', 4000);
+  await tikla(p, 'Kodu gönder', 5000);
+  await p.mouse.click(195, 606); await p.waitForTimeout(5000);
   await snap(p, 'otp');
-  await p.mouse.click(195, 300); await p.waitForTimeout(900);
-  await p.keyboard.type('123456', { delay: 60 });
+  await p.locator('input, textarea').first().focus().catch(() => {}); await p.waitForTimeout(900);
+  await p.keyboard.type('123456', { delay: 80 });
   await p.waitForTimeout(500);
   await tikla(p, 'Doğrula', 5000);
   await snap(p, 'profil_kurulum');

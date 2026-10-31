@@ -401,7 +401,6 @@ class _DetailScreenState extends State<DetailScreen> {
                         childAspectRatio: 2.6,
                         children: [
                           _kutu('Tür', i.turAd),
-                          _kutu('Cins', i.cins),
                           _kutu('Cinsiyet', i.cinsiyetAd),
                           _kutu('Adet', '${i.adet} baş'),
                           _kutu(i.suru ? 'Yaş aralığı' : 'Yaş', i.yasMetni),
@@ -440,7 +439,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                       Text(
                                         _guven!.yeni
                                             ? 'Yeni üye · henüz satışı yok, dikkatli ol'
-                                            : '${_guven!.satis} satış${_guven!.uyelik == null ? '' : ' · ${ayYil(_guven!.uyelik!)} tarihinden beri üye'}',
+                                            : '${_guven!.satis} satış${_guven!.uyelik == null ? '' : ' · üye: ${ayYil(_guven!.uyelik!)}'}',
                                         style: TextStyle(color: _guven!.yeni ? Renk.kiremit : Renk.soluk, fontSize: 12.5, fontWeight: _guven!.yeni ? FontWeight.w700 : FontWeight.w400),
                                       ),
                                   ],
