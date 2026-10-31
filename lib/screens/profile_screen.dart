@@ -5,7 +5,6 @@ import '../models.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
-import 'favorites_screen.dart';
 import 'detail_screen.dart';
 import 'settings_screens.dart';
 import 'shell.dart';
