@@ -6,6 +6,7 @@ import 'package:kuzu_deposu/galeri.dart';
 import 'package:kuzu_deposu/models.dart';
 import 'package:kuzu_deposu/rehber.dart';
 import 'package:kuzu_deposu/screens/satici_screen.dart';
+import 'package:kuzu_deposu/screens/talepler_screen.dart';
 import 'package:kuzu_deposu/theme.dart';
 import 'package:kuzu_deposu/widgets.dart';
 
@@ -99,6 +100,24 @@ void main() {
     expect(eksikBelgeler(b, null), ['kupe', 'pasaport']);
     expect(SaticiGuven(DateTime.now().subtract(const Duration(days: 3)), 0).yeni, true);
     expect(SaticiGuven(DateTime.now().subtract(const Duration(days: 3)), 2).yeni, false);
+  });
+
+  testWidgets('talep kartı çizilir, küçük ekranda taşmaz', (t) async {
+    final talep = Talep.json({
+      'id': 't', 'buyer_id': 'b', 'tur': 'kucukbas', 'cins': 'Akkaraman', 'adet': 12, 'amac': 'kurbanlik', 'butce_max': 150000,
+      'il': 'Manisa', 'aciklama': 'Kurban bayramı için, küpeli olsun', 'created_at': '2026-10-30T10:00:00Z', 'buyer': {'full_name': 'Ali Veli'},
+    });
+    expect(talep.baslik, 'Akkaraman arıyorum');
+    expect(talep.amacAd, 'Kurbanlık');
+    for (final benim in [false, true]) {
+      t.view.physicalSize = const Size(320, 640);
+      t.view.devicePixelRatio = 1;
+      await t.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: TalepKarti(talep: talep, benim: benim)))));
+      expect(find.text('Akkaraman arıyorum'), findsOneWidget);
+      expect(find.text(benim ? 'Talebi kapat' : 'İlanımı öner'), findsOneWidget);
+      expect(find.textContaining('150.000'), findsOneWidget);
+    }
+    addTearDown(t.view.reset);
   });
 
   testWidgets('alıcı rehberi çizilir ve açılır', (t) async {

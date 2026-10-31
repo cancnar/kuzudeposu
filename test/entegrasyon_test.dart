@@ -202,6 +202,16 @@ void main() {
           final sonra = (await ilanGetir(kendiIlan!))!;
           sart(sonra.bitis != null && once.bitis != null && sonra.bitis!.difference(once.bitis!).inDays >= 29, 'süre uzamadı');
         });
+        await adim('alıcı talebi: yayınla → listede → kapat', () async {
+          final id = await talepVer({'buyer_id': uid, 'tur': 'kucukbas', 'cins': 'Akkaraman', 'adet': 3, 'amac': 'kurbanlik', 'butce_max': 90000, 'il': 'Manisa', 'aciklama': 'CI test talebi'});
+          final l = await talepler(tur: 'kucukbas');
+          sart(l.any((x) => x.id == id), 'talep listede yok');
+          final b = await taleplerim();
+          sart(b.any((x) => x.id == id && x.aliciAd.isNotEmpty), 'taleplerim boş');
+          await talepKapat(id);
+          final k = await talepler(tur: 'kucukbas');
+          sart(!k.any((x) => x.id == id), 'kapatılan talep hâlâ listede');
+        });
         final baskasi = liste?.where((i) => i.saticiId != uid).toList() ?? [];
         if (baskasi.isEmpty) {
           sonuc.add('ADIM HATA  başkasının ilanı yok, mesajlaşma testleri atlandı');

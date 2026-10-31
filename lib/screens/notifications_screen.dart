@@ -6,6 +6,7 @@ import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'chat_screen.dart';
+import 'talepler_screen.dart';
 import 'detail_screen.dart';
 import 'settings_screens.dart';
 
@@ -24,6 +25,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         'yeni_ilan' => '+',
         'fiyat' => '₺',
         'yorum' => '★',
+        'talep' => '🔎',
         _ => '•',
       };
 
@@ -36,7 +38,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     app.sayaclariYenile();
     final d = (n['data'] as Map?) ?? {};
     if (!mounted) return;
-    if (d['conversation_id'] != null) {
+    if (d['wanted_id'] != null) {
+      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaleplerScreen()));
+    } else if (d['conversation_id'] != null) {
       await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatScreen(konusmaId: d['conversation_id'] as String)));
     } else if (d['listing_id'] != null) {
       await Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetailScreen(ilanId: d['listing_id'] as String)));

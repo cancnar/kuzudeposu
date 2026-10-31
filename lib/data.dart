@@ -297,3 +297,31 @@ Future<List<Ilan>> saticiIlanlari(String id, String durum) async {
   await fotolariDoldur(l);
   return l;
 }
+
+// ---- Alıcı talepleri ----
+const _talepSecim = '*, buyer:profiles!buyer_id(full_name)';
+
+Future<List<Talep>> talepler({String? tur}) async {
+  var q = db.from('wanted_ads').select(_talepSecim).eq('durum', 'aktif').gt('expires_at', DateTime.now().toUtc().toIso8601String());
+  if (tur != null) q = q.eq('tur', tur);
+  final r = await q.order('created_at', ascending: false).limit(50);
+  return r.map((e) => Talep.json(e)).toList();
+}
+
+Future<List<Talep>> taleplerim() async {
+  final r = await db.from('wanted_ads').select(_talepSecim).eq('buyer_id', uid!).order('created_at', ascending: false);
+  return r.map((e) => Talep.json(e)).toList();
+}
+
+Future<String> talepVer(Map<String, dynamic> alanlar) async {
+  final r = await db.from('wanted_ads').insert(alanlar).select('id').single();
+  return r['id'] as String;
+}
+
+Future<void> talepKapat(String id) => db.from('wanted_ads').update({'durum': 'kapandi'}).eq('id', id);
+
+/// Satıcı, kendi ilanını talebe önerir; sohbet id'si döner.
+Future<String> talebeIlanOner(String talepId, String ilanId) async {
+  final r = await db.rpc('talebe_ilan_oner', params: {'p_talep': talepId, 'p_ilan': ilanId});
+  return r as String;
+}

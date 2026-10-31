@@ -346,3 +346,51 @@ class Konusma {
     );
   }
 }
+
+/// Alıcı talebi: "şunu arıyorum" ilanı.
+class Talep {
+  Talep({
+    required this.id,
+    required this.aliciId,
+    required this.tur,
+    required this.adet,
+    required this.il,
+    required this.durum,
+    required this.olusturma,
+    this.cins,
+    this.amac,
+    this.butce,
+    this.aciklama,
+    this.aliciAd = 'Alıcı',
+  });
+
+  final String id, aliciId, tur, il, durum;
+  final String? cins, amac, aciklama;
+  final int adet;
+  final double? butce;
+  final DateTime olusturma;
+  final String aliciAd;
+
+  String get turAd => turEtiket[tur] ?? tur;
+  String? get amacAd => amac == null ? null : amacEtiket[amac];
+  String get baslik => '${cins ?? turAd} arıyorum';
+  bool get aktif => durum == 'aktif';
+
+  factory Talep.json(Map<String, dynamic> j) {
+    final a = j['buyer'];
+    return Talep(
+      id: j['id'] as String,
+      aliciId: j['buyer_id'] as String,
+      tur: j['tur'] as String,
+      cins: j['cins'] as String?,
+      adet: (j['adet'] as num).toInt(),
+      amac: j['amac'] as String?,
+      butce: (j['butce_max'] as num?)?.toDouble(),
+      il: j['il'] as String,
+      aciklama: j['aciklama'] as String?,
+      durum: j['durum'] as String? ?? 'aktif',
+      olusturma: DateTime.parse(j['created_at'] as String),
+      aliciAd: (a is Map ? a['full_name'] as String? : null) ?? 'Alıcı',
+    );
+  }
+}
