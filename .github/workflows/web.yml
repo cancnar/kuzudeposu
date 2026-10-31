@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -36,6 +36,14 @@ jobs:
         run: |
           set -o pipefail
           flutter build web --release --base-href /kuzudeposu/ > derleme.txt 2>&1 || { echo "::error title=derleme::$(tail -c 30000 derleme.txt | sed ':a;N;$!ba;s/\n/ || /g')"; exit 1; }
+      - name: Ekran görüntüleri (tasarım incelemesi için)
+        continue-on-error: true
+        run: |
+          mkdir -p site/kuzudeposu && cp -r build/web/* site/kuzudeposu/
+          (cd site && python3 -m http.server 8080 >/dev/null 2>&1 &)
+          mkdir -p /tmp/pw && cd /tmp/pw && npm init -y >/dev/null && npm i playwright >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
+          cd "$GITHUB_WORKSPACE" && NODE_PATH=/tmp/pw/node_modules node tool/ekran.js shots
+          cd shots && git init -q -b ekranlar && git config user.email ci@kuzudeposu && git config user.name ci && git add . && git commit -q -m "ekran görüntüleri" && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ekranlar
       - uses: actions/upload-artifact@v4
         with:
           name: web
