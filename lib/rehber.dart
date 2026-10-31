@@ -55,8 +55,11 @@ class AliciRehberi extends StatelessWidget {
     final eksik = eksikBelgeler(ilan, aliciIl);
     return Container(
       margin: const EdgeInsets.only(top: 14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
-      child: Theme(
+      child: Material(
+        color: Colors.white,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Renk.cizgi)),
+        child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           title: const Text('Satın almadan önce kontrol et', style: TextStyle(fontWeight: FontWeight.w800)),
@@ -93,6 +96,7 @@ class AliciRehberi extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
