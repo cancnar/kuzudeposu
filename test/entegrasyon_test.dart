@@ -109,7 +109,22 @@ void main() {
       if (uid == null) {
         sonuc.add('Oturum açılamadığı için sonraki adımlar atlandı. Supabase > Authentication > Phone ayarlarını kontrol et.');
       } else {
-        final mevcut = await db.from('profiles').select().eq('id', uid!).maybeSingle();
+        var mevcut = await db.from('profiles').select().eq('id', uid!).maybeSingle();
+        if (mevcut != null && mevcut['full_name'] == 'CI Test Kullanıcı') {
+          // Önceki testten kalan test hesabı: sil ve sıfırdan başla.
+          try {
+            await db.rpc('hesabimi_sil');
+            await db.auth.signOut();
+            await db.auth.signInWithOtp(phone: testNo);
+            await db.auth.verifyOTP(phone: testNo, token: '123456', type: OtpType.sms);
+            mevcut = await db.from('profiles').select().eq('id', uid!).maybeSingle();
+            sonuc.add('ADIM OK    önceki test hesabı silindi, temiz başlangıç');
+          } catch (e) {
+            hataSayisi++;
+            sonuc.add('ADIM HATA  önceki test hesabı silinemedi (002_ek_ozellikler.sql çalıştırıldı mı?) -> $e');
+            return;
+          }
+        }
         if (mevcut != null) {
           hataSayisi++;
           sonuc.add('ADIM HATA  bu numarada gerçek bir profil var; test güvenlik için durdu (ayrı test numarası kullan)');
