@@ -242,3 +242,16 @@ Future<void> aramaKaydet(String baslik, Filtre f) =>
 
 Future<void> aramaBildirim(String id, bool ac) => db.from('saved_searches').update({'notify': ac}).eq('id', id);
 Future<void> aramaSil(String id) => db.from('saved_searches').delete().eq('id', id);
+
+// ---- Herkese açık satıcı profili ----
+Future<Map<String, dynamic>?> saticiProfil(String id) => db.from('profiles').select().eq('id', id).maybeSingle();
+
+Future<List<Ilan>> saticiIlanlari(String id, String durum) async {
+  final r = await db.from('listings').select('*, $_saticiEmbed').eq('seller_id', id).eq('durum', durum).order('created_at', ascending: false);
+  final l = r.map((e) => Ilan.json(e)).toList();
+  if (durum == 'satildi') {
+    l.sort((a, b) => (b.satildiAt ?? b.olusturma).compareTo(a.satildiAt ?? a.olusturma));
+  }
+  await fotolariDoldur(l);
+  return l;
+}

@@ -100,6 +100,19 @@ void main() {
         await yorumlar(ilk.saticiId);
       });
 
+      await adim('misafir: satıcı profili (profil + aktif + satılan + yorumlar)', () async {
+        sart(ilk != null, 'ilan yok');
+        final pr = await saticiProfil(ilk!.saticiId);
+        sart(pr != null && (pr['full_name'] as String).isNotEmpty, 'satıcı profili okunamadı');
+        final a = await saticiIlanlari(ilk.saticiId, 'aktif');
+        sart(a.isNotEmpty && a.every((i) => i.aktif && i.saticiId == ilk.saticiId), 'aktif ilanlar yanlış');
+        final st = await saticiIlanlari(ilk.saticiId, 'satildi');
+        sart(st.every((i) => i.durum == 'satildi'), 'satılan ilanlar yanlış');
+        sonuc.add('   bilgi: satıcının ${a.length} aktif, ${st.length} satılmış ilanı var (satılmışlar için 003 + seed gerekir)');
+        final y = await yorumlar(ilk.saticiId);
+        sonuc.add('   bilgi: satıcının ${y.length} yorumu var');
+      });
+
       // ---------- Giriş ----------
       await adim('giriş: telefon kodu gönder + doğrula (test numarası)', () async {
         await db.auth.signInWithOtp(phone: testNo);

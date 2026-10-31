@@ -101,12 +101,13 @@ class FotoKutusu extends StatelessWidget {
 }
 
 class IlanKarti extends StatelessWidget {
-  const IlanKarti({super.key, required this.ilan, required this.onTap, required this.favori, required this.onFavori, this.durumGoster = false});
+  const IlanKarti({super.key, required this.ilan, required this.onTap, required this.favori, required this.onFavori, this.durumGoster = false, this.kalp = true});
   final Ilan ilan;
   final VoidCallback onTap;
   final bool favori;
   final VoidCallback onFavori;
   final bool durumGoster;
+  final bool kalp;
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +146,7 @@ class IlanKarti extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(color: Renk.murekkep, borderRadius: BorderRadius.circular(8)),
-                          child: Text(i.durum == 'satildi' ? 'Satıldı' : 'Yayında değil',
+                          child: Text(i.durum == 'satildi' ? (i.satildiAt != null ? 'Satıldı · ${goreli(i.satildiAt!)}' : 'Satıldı') : 'Yayında değil',
                               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.white)),
                         ),
                       ),
@@ -184,6 +185,7 @@ class IlanKarti extends StatelessWidget {
               ],
             ),
           ),
+          if (kalp)
           Positioned(
             top: 6,
             right: 6,

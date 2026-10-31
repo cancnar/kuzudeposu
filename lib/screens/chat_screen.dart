@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'detail_screen.dart';
 import 'report_screen.dart';
+import 'satici_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, required this.konusmaId});
@@ -161,7 +162,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        title: Row(
+        title: InkWell(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SaticiScreen(saticiId: k.karsiId, ad: k.karsiAd))),
+          child: Row(
           children: [
             CircleAvatar(radius: 20, backgroundColor: Renk.cizgi, child: Text(k.bas, style: const TextStyle(fontWeight: FontWeight.w800, color: Renk.yesil))),
             const SizedBox(width: 10),
@@ -170,11 +173,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(k.karsiAd, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Renk.murekkep), overflow: TextOverflow.ellipsis),
-                  const Text('✓ Doğrulanmış', style: TextStyle(fontSize: 12, color: Renk.yesil, fontWeight: FontWeight.w800)),
+                  const Text('✓ Doğrulanmış · profili gör', style: TextStyle(fontSize: 12, color: Renk.yesil, fontWeight: FontWeight.w800)),
                 ],
               ),
             ),
           ],
+        ),
         ),
         actions: [IconButton(icon: const Icon(Icons.more_vert), tooltip: 'Menü', onPressed: _menu)],
       ),

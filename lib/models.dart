@@ -51,6 +51,9 @@ String goreli(DateTime t) {
   return '${d.inDays ~/ 365} yıl önce';
 }
 
+const _aylar = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+String ayYil(DateTime t) => '${_aylar[t.toLocal().month - 1]} ${t.toLocal().year}';
+
 String maske(String? telefon) {
   var t = (telefon ?? '').replaceAll(RegExp(r'\D'), '');
   if (t.startsWith('90') && t.length == 12) t = t.substring(2);
@@ -77,6 +80,7 @@ class Ilan {
     required this.olusturma,
     this.aciklama,
     this.mesafe,
+    this.satildiAt,
     this.saticiAd = 'Satıcı',
     this.saticiPuan = 0,
     this.saticiPuanSayisi = 0,
@@ -87,6 +91,7 @@ class Ilan {
   final int adet, yasMin, yasMax;
   final double agirlik, toplam;
   final double? mesafe;
+  final DateTime? satildiAt;
   final DateTime olusturma;
   String saticiAd;
   double saticiPuan;
@@ -129,6 +134,7 @@ class Ilan {
       aciklama: j['aciklama'] as String?,
       olusturma: DateTime.parse(j['created_at'] as String),
       mesafe: mesafe,
+      satildiAt: j['satildi_at'] == null ? null : DateTime.parse(j['satildi_at'] as String),
       saticiAd: sAd ?? 'Satıcı',
       saticiPuan: (sPuan ?? 0).toDouble(),
       saticiPuanSayisi: sSayi ?? 0,

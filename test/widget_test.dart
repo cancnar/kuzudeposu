@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kuzu_deposu/galeri.dart';
 import 'package:kuzu_deposu/models.dart';
+import 'package:kuzu_deposu/screens/satici_screen.dart';
 import 'package:kuzu_deposu/theme.dart';
 import 'package:kuzu_deposu/widgets.dart';
 
@@ -30,6 +31,7 @@ Ilan ornek({int adet = 1}) => Ilan(
 
 void main() {
   galeriTestleri();
+  saticiTestleri();
   test('biçimlendirme yardımcıları', () {
     expect(tl(1740000), '1.740.000 ₺');
     expect(tl(999), '999 ₺');
@@ -138,4 +140,38 @@ void galeriTestleri() {
     expect(find.byType(InteractiveViewer), findsNothing);
     expect(t.takeException(), isNull);
   });
+}
+
+void saticiTestleri() {
+  for (final olcek in [1.0, 1.3]) {
+    testWidgets('satıcı başlığı 320 px ekranda taşmıyor (yazı ölçeği $olcek)', (t) async {
+      t.view.physicalSize = const Size(320, 640);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(size: const Size(320, 640), textScaler: TextScaler.linear(olcek)),
+          child: Scaffold(
+            body: ListView(children: [
+              SaticiBaslik(
+                ad: 'Süleyman Aydın (örnek) uzun isim deneme',
+                rol: 'Yetiştirici',
+                yer: 'Eskil, Aksaray',
+                uyelik: DateTime(2026, 10, 3),
+                puan: 4.5,
+                puanSayisi: 128,
+                aktifSayi: 12,
+                satisSayi: 4500,
+                dagilim: const [1, 2, 3, 40, 82],
+              ),
+            ]),
+          ),
+        ),
+      ));
+      await t.pump();
+      expect(t.takeException(), isNull);
+      expect(find.text('Satış'), findsOneWidget);
+      expect(find.textContaining('tarihinden beri üye'), findsOneWidget);
+    });
+  }
 }

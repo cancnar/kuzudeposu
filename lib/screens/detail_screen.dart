@@ -7,6 +7,7 @@ import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'chat_screen.dart';
+import 'satici_screen.dart';
 import 'phone_screen.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -241,24 +242,33 @@ class _DetailScreenState extends State<DetailScreen> {
                         Text(i.aciklama!, style: const TextStyle(height: 1.5)),
                       ],
                       const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor: Renk.cizgi,
-                            child: Text(i.saticiAd.isEmpty ? '?' : i.saticiAd.substring(0, 1).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w800, color: Renk.yesil)),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SaticiScreen(saticiId: i.saticiId, ad: i.saticiAd))),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 24,
+                                backgroundColor: Renk.cizgi,
+                                child: Text(i.saticiAd.isEmpty ? '?' : i.saticiAd.substring(0, 1).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w800, color: Renk.yesil)),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(_benim ? 'Siz' : i.saticiAd, style: const TextStyle(fontWeight: FontWeight.w800)),
+                                    const Text('✓ Telefonu doğrulanmış', style: TextStyle(color: Renk.yesil, fontSize: 13, fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
+                              ),
+                              const Text('Profili gör', style: TextStyle(color: Renk.yesil, fontWeight: FontWeight.w800, fontSize: 13)),
+                              const Icon(Icons.chevron_right, color: Renk.yesil),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(_benim ? 'Siz' : i.saticiAd, style: const TextStyle(fontWeight: FontWeight.w800)),
-                                const Text('✓ Telefonu doğrulanmış', style: TextStyle(color: Renk.yesil, fontSize: 13, fontWeight: FontWeight.w700)),
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                       if (i.saticiPuanSayisi > 0) _puanOzeti(i),
                       const SizedBox(height: 18),
