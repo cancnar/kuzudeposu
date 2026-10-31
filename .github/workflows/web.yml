@@ -31,7 +31,7 @@ jobs:
         continue-on-error: true
         run: |
           flutter test --reporter expanded > test.txt 2>&1 || true
-          echo "::notice title=test::$(grep -E 'ADIM|TEST RAPORU|bilgi:|Some tests|All tests|\[E\]|Expected|Actual|taşma|Exception|Error' test.txt | head -c 30000 | sed ':a;N;$!ba;s/\n/ || /g')"
+          echo "::notice title=test::$(grep -E -A3 'ADIM|TEST RAPORU|bilgi:|Some tests|All tests|\[E\]|Expected|Actual|taşma|Exception|Error|EXCEPTION|RenderFlex|Failed assertion|was thrown' test.txt | head -c 30000 | sed ':a;N;$!ba;s/\n/ || /g')"
       - name: Web derle
         run: |
           set -o pipefail
