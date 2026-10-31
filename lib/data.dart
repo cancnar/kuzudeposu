@@ -277,6 +277,11 @@ Future<void> aramaSil(String id) => db.from('saved_searches').delete().eq('id', 
 // ---- Herkese açık satıcı profili ----
 Future<Map<String, dynamic>?> saticiProfil(String id) => db.from('profiles').select().eq('id', id).maybeSingle();
 
+Future<int> saticiSatisSayisi(String id) async {
+  final r = await db.from('listings').select('id').eq('seller_id', id).eq('durum', 'satildi');
+  return r.length;
+}
+
 Future<List<Ilan>> saticiIlanlari(String id, String durum) async {
   final r = await db.from('listings').select('*, $_saticiEmbed').eq('seller_id', id).eq('durum', durum).order('created_at', ascending: false);
   final l = r.map((e) => Ilan.json(e)).toList();

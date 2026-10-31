@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kuzu_deposu/galeri.dart';
 import 'package:kuzu_deposu/models.dart';
+import 'package:kuzu_deposu/rehber.dart';
 import 'package:kuzu_deposu/screens/satici_screen.dart';
 import 'package:kuzu_deposu/theme.dart';
 import 'package:kuzu_deposu/widgets.dart';
@@ -28,6 +29,8 @@ Ilan ornek({int adet = 1}) => Ilan(
       saticiPuan: 4.8,
       saticiPuanSayisi: 23,
     );
+
+Object? tester_exception(WidgetTester t) => t.takeException();
 
 void main() {
   galeriTestleri();
@@ -79,6 +82,25 @@ void main() {
     expect(i.pazarlik, true);
     expect(i.teslimatAd, 'Yerinde veya nakliye');
     expect(i.goruntulenme, 42);
+  });
+
+  test('sevk belgeleri: il içi / iller arası', () {
+    final b = ornek(); // büyükbaş, Manisa, belge yok
+    expect(gerekliBelgeler(b, 'Manisa'), ['kupe', 'pasaport']);
+    expect(gerekliBelgeler(b, 'manisa '), ['kupe', 'pasaport']);
+    expect(gerekliBelgeler(b, 'İzmir'), ['kupe', 'pasaport', 'saglik_raporu']);
+    expect(eksikBelgeler(b, null), ['kupe', 'pasaport']);
+    expect(SaticiGuven(DateTime.now().subtract(const Duration(days: 3)), 0).yeni, true);
+    expect(SaticiGuven(DateTime.now().subtract(const Duration(days: 3)), 2).yeni, false);
+  });
+
+  testWidgets('alıcı rehberi çizilir ve açılır', (t) async {
+    await t.pumpWidget(MaterialApp(theme: kuzuTema(), home: Scaffold(body: SingleChildScrollView(child: AliciRehberi(ilan: ornek(), aliciIl: 'İzmir')))));
+    expect(find.text('Satın almadan önce kontrol et'), findsOneWidget);
+    await t.tap(find.text('Satın almadan önce kontrol et'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('İller arası sevkte'), findsOneWidget);
+    expect(tester_exception(t), isNull);
   });
 
   testWidgets('ilan kartı küçük ekranda ve büyük yazıda taşmıyor', (t) async {

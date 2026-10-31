@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data.dart';
 import '../galeri.dart';
+import '../rehber.dart';
 import '../models.dart';
 import '../state.dart';
 import '../theme.dart';
@@ -26,6 +27,7 @@ class _DetailScreenState extends State<DetailScreen> {
   Object? _hata;
   FiyatOzeti? _piyasa;
   Map<String, dynamic>? _stat;
+  SaticiGuven? _guven;
 
   @override
   void initState() {
@@ -47,6 +49,11 @@ class _DetailScreenState extends State<DetailScreen> {
         await fotolariDoldur([_i!]);
       }
       _yorumlar = await yorumlar(_i!.saticiId);
+      try {
+        final pr = await saticiProfil(_i!.saticiId);
+        final sat = await saticiSatisSayisi(_i!.saticiId);
+        _guven = SaticiGuven(pr?['created_at'] == null ? null : DateTime.parse(pr!['created_at'] as String), sat);
+      } catch (_) {}
       if (_i!.aktif) {
         if (_benim) {
           _stat = await ilanIstatistik(_i!.id).catchError((_) => null);
@@ -375,6 +382,7 @@ class _DetailScreenState extends State<DetailScreen> {
                         const SizedBox(height: 14),
                         Text(i.aciklama!, style: const TextStyle(height: 1.5)),
                       ],
+                      if (!_benim && i.aktif) AliciRehberi(ilan: i, aliciIl: app.profil?['il'] as String?),
                       if (!_benim && i.aktif) _guvenUyarisi(),
                       const SizedBox(height: 18),
                       InkWell(
@@ -396,6 +404,13 @@ class _DetailScreenState extends State<DetailScreen> {
                                   children: [
                                     Text(_benim ? 'Siz' : i.saticiAd, style: const TextStyle(fontWeight: FontWeight.w800)),
                                     const Text('✓ Telefonu doğrulanmış', style: TextStyle(color: Renk.yesil, fontSize: 13, fontWeight: FontWeight.w700)),
+                                    if (_guven != null)
+                                      Text(
+                                        _guven!.yeni
+                                            ? 'Yeni üye · henüz satışı yok, dikkatli ol'
+                                            : '${_guven!.satis} satış${_guven!.uyelik == null ? '' : ' · ${ayYil(_guven!.uyelik!)} tarihinden beri üye'}',
+                                        style: TextStyle(color: _guven!.yeni ? Renk.kiremit : Renk.soluk, fontSize: 12.5, fontWeight: _guven!.yeni ? FontWeight.w700 : FontWeight.w400),
+                                      ),
                                   ],
                                 ),
                               ),
