@@ -1,0 +1,290 @@
+import 'dart:convert';
+
+const turEtiket = {'buyukbas': 'Büyükbaş', 'kucukbas': 'Küçükbaş', 'kanatli': 'Kanatlı', 'at': 'At'};
+final Map<String, String> turKod = {for (final e in turEtiket.entries) e.value: e.key};
+const cinsiyetEtiket = {'disi': 'Dişi', 'erkek': 'Erkek', 'karisik': 'Karışık'};
+const turSecenekleri = ['Büyükbaş', 'Küçükbaş', 'Kanatlı', 'At'];
+const cinsListesi = <String, List<String>>{
+  'Büyükbaş': ['Simental', 'Holstein', 'Montofon', 'Şarole', 'Angus', 'Yerli kara'],
+  'Küçükbaş': ['Akkaraman', 'Merinos', 'Kıvırcık', 'Sakız', 'Daglıç', 'Saanen keçisi'],
+  'Kanatlı': ['Tavuk', 'Hindi', 'Kaz', 'Ördek'],
+  'At': ['Arap', 'İngiliz', 'Rahvan', 'Yerli'],
+};
+
+String sayi(num n) {
+  final s = n.round().abs().toString();
+  final b = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) b.write('.');
+    b.write(s[i]);
+  }
+  return '${n < 0 ? '-' : ''}$b';
+}
+
+String tl(num n) => '${sayi(n)} ₺';
+String puanYaz(num p) => p.toStringAsFixed(1).replaceAll('.', ',');
+String yildiz(num p) {
+  final k = p.round().clamp(0, 5);
+  return '★' * k + '☆' * (5 - k);
+}
+
+num? sayiOku(String s) => num.tryParse(s.trim().replaceAll(',', '.'));
+
+String _ik(int x) => x.toString().padLeft(2, '0');
+
+String saat(DateTime t) {
+  final l = t.toLocal();
+  final n = DateTime.now();
+  if (l.year == n.year && l.month == n.month && l.day == n.day) return '${_ik(l.hour)}:${_ik(l.minute)}';
+  final dun = n.subtract(const Duration(days: 1));
+  if (l.year == dun.year && l.month == dun.month && l.day == dun.day) return 'Dün';
+  return '${_ik(l.day)}.${_ik(l.month)}';
+}
+
+String goreli(DateTime t) {
+  final d = DateTime.now().difference(t);
+  if (d.inMinutes < 60) return 'Az önce';
+  if (d.inHours < 24) return '${d.inHours} saat önce';
+  if (d.inDays < 7) return '${d.inDays} gün önce';
+  if (d.inDays < 30) return '${d.inDays ~/ 7} hafta önce';
+  if (d.inDays < 365) return '${d.inDays ~/ 30} ay önce';
+  return '${d.inDays ~/ 365} yıl önce';
+}
+
+String maske(String? telefon) {
+  var t = (telefon ?? '').replaceAll(RegExp(r'\D'), '');
+  if (t.startsWith('90') && t.length == 12) t = t.substring(2);
+  if (t.length != 10) return '+90 *** *** ** **';
+  return '+90 ${t.substring(0, 3)} *** ** ${t.substring(8)}';
+}
+
+class Ilan {
+  Ilan({
+    required this.id,
+    required this.saticiId,
+    required this.tur,
+    required this.cins,
+    required this.cinsiyet,
+    required this.adet,
+    required this.yasMin,
+    required this.yasMax,
+    required this.agirlik,
+    required this.toplam,
+    required this.satisSekli,
+    required this.il,
+    required this.ilce,
+    required this.durum,
+    required this.olusturma,
+    this.aciklama,
+    this.mesafe,
+    this.saticiAd = 'Satıcı',
+    this.saticiPuan = 0,
+    this.saticiPuanSayisi = 0,
+  });
+
+  final String id, saticiId, tur, cins, cinsiyet, satisSekli, il, ilce, durum;
+  final String? aciklama;
+  final int adet, yasMin, yasMax;
+  final double agirlik, toplam;
+  final double? mesafe;
+  final DateTime olusturma;
+  String saticiAd;
+  double saticiPuan;
+  int saticiPuanSayisi;
+  List<String> foto = [];
+
+  bool get suru => adet > 1;
+  String get turAd => turEtiket[tur] ?? tur;
+  String get cinsiyetAd => cinsiyetEtiket[cinsiyet] ?? cinsiyet;
+  String get yasMetni => suru ? '$yasMin–$yasMax ay' : '$yasMin ay';
+  int get kgFiyat => (toplam / (adet * agirlik)).round();
+  String get yer => '$ilce, $il';
+  bool get aktif => durum == 'aktif';
+
+  factory Ilan.json(Map<String, dynamic> j, {String? ad, num? puan, int? puanSayisi, double? mesafe}) {
+    final s = j['seller'];
+    String? sAd = ad;
+    num? sPuan = puan;
+    int? sSayi = puanSayisi;
+    if (s is Map) {
+      sAd ??= s['full_name'] as String?;
+      sPuan ??= s['rating_avg'] as num?;
+      sSayi ??= (s['rating_count'] as num?)?.toInt();
+    }
+    return Ilan(
+      id: j['id'] as String,
+      saticiId: j['seller_id'] as String,
+      tur: j['tur'] as String,
+      cins: j['cins'] as String,
+      cinsiyet: j['cinsiyet'] as String,
+      adet: (j['adet'] as num).toInt(),
+      yasMin: (j['yas_min'] as num).toInt(),
+      yasMax: (j['yas_max'] as num).toInt(),
+      agirlik: (j['agirlik_kg'] as num).toDouble(),
+      toplam: (j['toplam_fiyat'] as num).toDouble(),
+      satisSekli: j['satis_sekli'] as String? ?? 'birlikte',
+      il: j['il'] as String,
+      ilce: j['ilce'] as String,
+      durum: j['durum'] as String? ?? 'aktif',
+      aciklama: j['aciklama'] as String?,
+      olusturma: DateTime.parse(j['created_at'] as String),
+      mesafe: mesafe,
+      saticiAd: sAd ?? 'Satıcı',
+      saticiPuan: (sPuan ?? 0).toDouble(),
+      saticiPuanSayisi: sSayi ?? 0,
+    );
+  }
+}
+
+class AktifEtiket {
+  AktifEtiket(this.metin, this.alanlar);
+  final String metin;
+  final List<String> alanlar;
+}
+
+class Filtre {
+  static const varsayilan = <String, String>{
+    'tur': 'Hepsi',
+    'cins': '',
+    'satis': 'Hepsi',
+    'adetMin': '',
+    'adetMax': '',
+    'yasMin': '',
+    'yasMax': '',
+    'kgMin': '',
+    'kgMax': '',
+    'fiyatMin': '',
+    'fiyatMax': '',
+    'il': '',
+    'sirala': 'En yeni',
+  };
+  static const siralamalar = ['En yeni', 'Fiyat: artan', 'Fiyat: azalan'];
+
+  Filtre([Map<String, String>? m]) : v = {...varsayilan, ...?m};
+  factory Filtre.json(dynamic j) {
+    final m = <String, String>{};
+    if (j is Map) j.forEach((k, x) => m['$k'] = '$x');
+    return Filtre(m);
+  }
+
+  final Map<String, String> v;
+  Filtre kopya() => Filtre(Map.of(v));
+  String operator [](String k) => v[k] ?? '';
+  void operator []=(String k, String x) => v[k] = x;
+  void sifirla(List<String> k) {
+    for (final a in k) {
+      v[a] = varsayilan[a] ?? '';
+    }
+  }
+
+  void hepsiniTemizle() {
+    v
+      ..clear()
+      ..addAll(varsayilan);
+  }
+
+  String get imza => jsonEncode(v);
+
+  String _aralik(String a, String b) => '${this[a].isEmpty ? '…' : this[a]} – ${this[b].isEmpty ? '…' : this[b]}';
+
+  List<AktifEtiket> aktif() {
+    final o = <AktifEtiket>[];
+    if (this['cins'].isNotEmpty) o.add(AktifEtiket(this['cins'], ['cins']));
+    if (this['satis'] != 'Hepsi') o.add(AktifEtiket(this['satis'], ['satis']));
+    if (this['adetMin'].isNotEmpty || this['adetMax'].isNotEmpty) {
+      o.add(AktifEtiket('${_aralik('adetMin', 'adetMax')} baş', ['adetMin', 'adetMax']));
+    }
+    if (this['yasMin'].isNotEmpty || this['yasMax'].isNotEmpty) {
+      o.add(AktifEtiket('${_aralik('yasMin', 'yasMax')} ay', ['yasMin', 'yasMax']));
+    }
+    if (this['kgMin'].isNotEmpty || this['kgMax'].isNotEmpty) {
+      o.add(AktifEtiket('${_aralik('kgMin', 'kgMax')} kg', ['kgMin', 'kgMax']));
+    }
+    if (this['fiyatMin'].isNotEmpty || this['fiyatMax'].isNotEmpty) {
+      o.add(AktifEtiket('${_aralik('fiyatMin', 'fiyatMax')} ₺', ['fiyatMin', 'fiyatMax']));
+    }
+    if (this['il'].isNotEmpty) o.add(AktifEtiket(this['il'], ['il']));
+    return o;
+  }
+
+  Map<String, dynamic> rpc(String q) {
+    final p = <String, dynamic>{'p_limit': 50};
+    if (q.trim().isNotEmpty) p['p_q'] = q.trim();
+    if (this['tur'] != 'Hepsi') p['p_tur'] = turKod[this['tur']];
+    if (this['cins'].trim().isNotEmpty) p['p_cins'] = this['cins'].trim();
+    if (this['satis'] == 'Tek hayvan') p['p_sale'] = 'tek';
+    if (this['satis'] == 'Sürü') p['p_sale'] = 'suru';
+    void n(String k, String pk, {bool tam = false}) {
+      final x = sayiOku(this[k]);
+      if (x != null) p[pk] = tam ? x.round() : x;
+    }
+
+    n('adetMin', 'p_adet_min', tam: true);
+    n('adetMax', 'p_adet_max', tam: true);
+    n('yasMin', 'p_yas_min', tam: true);
+    n('yasMax', 'p_yas_max', tam: true);
+    n('kgMin', 'p_kg_min');
+    n('kgMax', 'p_kg_max');
+    n('fiyatMin', 'p_fiyat_min');
+    n('fiyatMax', 'p_fiyat_max');
+    if (this['il'].trim().isNotEmpty) p['p_il'] = this['il'].trim();
+    p['p_sort'] = switch (this['sirala']) {
+      'Fiyat: artan' => 'fiyat_artan',
+      'Fiyat: azalan' => 'fiyat_azalan',
+      _ => 'en_yeni',
+    };
+    return p;
+  }
+}
+
+class Mesaj {
+  Mesaj({required this.id, required this.gonderen, required this.metin, required this.zaman, this.okundu});
+  final String id, gonderen, metin;
+  final DateTime zaman;
+  final DateTime? okundu;
+  factory Mesaj.json(Map<String, dynamic> j) => Mesaj(
+        id: j['id'] as String,
+        gonderen: j['sender_id'] as String,
+        metin: j['body'] as String,
+        zaman: DateTime.parse(j['created_at'] as String),
+        okundu: j['read_at'] == null ? null : DateTime.parse(j['read_at'] as String),
+      );
+}
+
+class Konusma {
+  Konusma({
+    required this.id,
+    required this.ilanId,
+    required this.karsiId,
+    required this.karsiAd,
+    required this.alici,
+    this.ilanCins,
+    this.ilanAdet,
+    this.ilanFiyat,
+  });
+  final String id, ilanId, karsiId, karsiAd;
+  final bool alici; // ben alıcı mıyım
+  final String? ilanCins;
+  final int? ilanAdet;
+  final num? ilanFiyat;
+  Mesaj? son;
+  int okunmamis = 0;
+
+  String get bas => karsiAd.isEmpty ? '?' : karsiAd.substring(0, 1).toUpperCase();
+
+  factory Konusma.json(Map<String, dynamic> j, String ben) {
+    final alici = j['buyer_id'] == ben;
+    final karsi = (alici ? j['seller'] : j['buyer']) as Map?;
+    final l = j['listing'] as Map?;
+    return Konusma(
+      id: j['id'] as String,
+      ilanId: j['listing_id'] as String,
+      karsiId: (alici ? j['seller_id'] : j['buyer_id']) as String,
+      karsiAd: (karsi?['full_name'] as String?) ?? 'Kullanıcı',
+      alici: alici,
+      ilanCins: l?['cins'] as String?,
+      ilanAdet: (l?['adet'] as num?)?.toInt(),
+      ilanFiyat: l?['toplam_fiyat'] as num?,
+    );
+  }
+}

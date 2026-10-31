@@ -29,6 +29,13 @@ ThemeData kuzuTema() {
       surface: Renk.krem,
     ),
     scaffoldBackgroundColor: Renk.krem,
+    appBarTheme: AppBarTheme(
+      backgroundColor: Renk.krem,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      foregroundColor: Renk.yesil,
+      titleTextStyle: baslik.copyWith(fontSize: 22),
+    ),
     textTheme: govde.copyWith(
       headlineMedium: baslik.copyWith(fontSize: 28),
       titleLarge: baslik.copyWith(fontSize: 22),

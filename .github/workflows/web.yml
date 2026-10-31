@@ -30,7 +30,7 @@ jobs:
       - name: Web derle
         run: |
           set -o pipefail
-          flutter build web --release --base-href /kuzudeposu/ > derleme.txt 2>&1 || { echo "::error title=derleme::$(tail -c 6000 derleme.txt | sed ':a;N;$!ba;s/\n/ || /g')"; exit 1; }
+          flutter build web --release --base-href /kuzudeposu/ > derleme.txt 2>&1 || { echo "::error title=derleme::$(tail -c 30000 derleme.txt | sed ':a;N;$!ba;s/\n/ || /g')"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: web
