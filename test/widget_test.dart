@@ -95,7 +95,7 @@ void main() {
   });
 
   testWidgets('alıcı rehberi çizilir ve açılır', (t) async {
-    await t.pumpWidget(MaterialApp(theme: kuzuTema(), home: Scaffold(body: SingleChildScrollView(child: AliciRehberi(ilan: ornek(), aliciIl: 'İzmir')))));
+    await t.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: AliciRehberi(ilan: ornek(), aliciIl: 'İzmir')))));
     expect(find.text('Satın almadan önce kontrol et'), findsOneWidget);
     await t.tap(find.text('Satın almadan önce kontrol et'));
     await t.pumpAndSettle();
