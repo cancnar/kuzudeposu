@@ -1,5 +1,8 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kuzu_deposu/galeri.dart';
 import 'package:kuzu_deposu/models.dart';
 import 'package:kuzu_deposu/theme.dart';
 import 'package:kuzu_deposu/widgets.dart';
@@ -26,6 +29,7 @@ Ilan ornek({int adet = 1}) => Ilan(
     );
 
 void main() {
+  galeriTestleri();
   test('biçimlendirme yardımcıları', () {
     expect(tl(1740000), '1.740.000 ₺');
     expect(tl(999), '999 ₺');
@@ -84,5 +88,54 @@ void main() {
     await t.pump();
     expect(t.takeException(), isNull);
     expect(find.text('Satır'), findsOneWidget);
+  });
+}
+
+Future<ui.Image> _buyukResim(int g, int y) async {
+  final k = ui.PictureRecorder();
+  final c = Canvas(k);
+  c.drawRect(Rect.fromLTWH(0, 0, g.toDouble(), y.toDouble()), Paint()..color = const Color(0xFF2F5D3A));
+  c.drawCircle(Offset(g / 2, y / 2), g / 4, Paint()..color = Colors.white);
+  return k.endRecording().toImage(g, y);
+}
+
+void galeriTestleri() {
+  testWidgets('galeri: telefona oranlı, alttaki bilgiler görünür, kaydırılır, tam ekran açılır', (t) async {
+    t.view.physicalSize = const Size(390, 844);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    // Büyük (3000x4000, dikey) bir fotoğraf: eskiden ekranı kaplıyordu.
+    final img = (await t.runAsync(() async {
+      final i = await _buyukResim(3000, 4000);
+      final b = await i.toByteData(format: ui.ImageByteFormat.png);
+      return b!.buffer.asUint8List();
+    }))!;
+    await t.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: ListView(children: [
+          FotoGaleri(fotolar: const ['a', 'b', 'c'], saglayici: (_) => MemoryImage(img)),
+          const Padding(padding: EdgeInsets.all(16), child: Text('SATICI BILGISI')),
+        ]),
+      ),
+    ));
+    await t.pump();
+    final boyut = t.getSize(find.byType(AspectRatio).first);
+    expect(boyut.width, 390);
+    expect(boyut.height, closeTo(292.5, 0.5), reason: '4:3 oranı bozuk');
+    expect(find.text('SATICI BILGISI').hitTestable(), findsOneWidget, reason: 'alt bilgiler ekranda görünmüyor');
+    expect(find.text('1/3'), findsOneWidget);
+    await t.drag(find.byType(PageView).first, const Offset(-300, 0));
+    await t.pumpAndSettle();
+    expect(find.text('2/3'), findsOneWidget, reason: 'kaydırınca sonraki fotoğrafa geçmedi');
+    await t.tap(find.byTooltip('Sonraki fotoğraf'));
+    await t.pumpAndSettle();
+    expect(find.text('3/3'), findsOneWidget, reason: 'ok düğmesi çalışmıyor');
+    await t.tap(find.byType(Image).first);
+    await t.pumpAndSettle();
+    expect(find.byType(InteractiveViewer), findsWidgets, reason: 'tam ekran görüntüleyici açılmadı');
+    await t.tap(find.byTooltip('Kapat'));
+    await t.pumpAndSettle();
+    expect(find.byType(InteractiveViewer), findsNothing);
+    expect(t.takeException(), isNull);
   });
 }

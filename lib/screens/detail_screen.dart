@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data.dart';
+import '../galeri.dart';
 import '../models.dart';
 import '../state.dart';
 import '../theme.dart';
@@ -22,7 +23,6 @@ class _DetailScreenState extends State<DetailScreen> {
   List<Map<String, dynamic>> _yorumlar = [];
   bool _yuk = true;
   Object? _hata;
-  int _foto = 0;
 
   @override
   void initState() {
@@ -172,15 +172,7 @@ class _DetailScreenState extends State<DetailScreen> {
               children: [
                 Stack(
                   children: [
-                    SizedBox(
-                      height: 260,
-                      child: fotolar.isEmpty
-                          ? const FotoKutusu(yukseklik: 260)
-                          : PageView(
-                              onPageChanged: (p) => setState(() => _foto = p),
-                              children: [for (final f in fotolar) FotoKutusu(url: f, yukseklik: 260)],
-                            ),
-                    ),
+                    FotoGaleri(fotolar: fotolar),
                     Positioned(
                       left: 8,
                       top: MediaQuery.of(context).padding.top + 8,
@@ -199,16 +191,6 @@ class _DetailScreenState extends State<DetailScreen> {
                             onPressed: _favori,
                             icon: Icon(app.favoriler.contains(i.id) ? Icons.favorite : Icons.favorite_border, color: Renk.kiremit),
                           ),
-                        ),
-                      ),
-                    if (fotolar.length > 1)
-                      Positioned(
-                        right: 12,
-                        bottom: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(10)),
-                          child: Text('${_foto + 1}/${fotolar.length}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                         ),
                       ),
                   ],
