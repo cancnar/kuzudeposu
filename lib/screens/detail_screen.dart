@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data.dart';
 import '../galeri.dart';
 import '../rehber.dart';
+import '../video.dart';
 import '../models.dart';
 import '../state.dart';
 import '../theme.dart';
@@ -355,6 +356,22 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                   ],
                 ),
+                if (i.videoVar)
+                  InkWell(
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => VideoEkrani(url: videoUrl(i.videoYol!)))),
+                    child: Container(
+                      color: Renk.murekkep,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.play_circle_fill, color: altin, size: 30),
+                          SizedBox(width: 10),
+                          Expanded(child: Text('Hayvanın videosunu izle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+                          Icon(Icons.chevron_right, color: Colors.white),
+                        ],
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
                   child: Column(

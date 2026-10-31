@@ -212,6 +212,22 @@ void main() {
           final k = await talepler(tur: 'kucukbas');
           sart(!k.any((x) => x.id == id), 'kapatılan talep hâlâ listede');
         });
+        await adim('video yükle (listing-videos) + oynatma adresi', () async {
+          final id = await ilanVer({
+            'seller_id': uid, 'tur': 'kucukbas', 'cins': 'Akkaraman', 'cinsiyet': 'erkek', 'adet': 1, 'yas_min': 8, 'yas_max': 8,
+            'agirlik_kg': 50, 'toplam_fiyat': 20000, 'aciklama': 'CI video testi', 'il': 'Manisa', 'ilce': 'Salihli',
+          }, [FotoDosya(png, 'a.png', 'image/png'), FotoDosya(png, 'b.png', 'image/png'), FotoDosya(png, 'c.png', 'image/png')],
+              video: FotoDosya(Uint8List.fromList(List.filled(2048, 0)), 'klip.mp4', 'video/mp4'));
+          olusanFotolar.addAll(['${uid!}/$id/0.png', '${uid!}/$id/1.png', '${uid!}/$id/2.png']);
+          final i = await ilanGetir(id);
+          sart(i != null && i.videoVar, 'video yolu kaydedilmedi');
+          final c = HttpClient();
+          final res = await (await c.getUrl(Uri.parse(videoUrl(i!.videoYol!)))).close();
+          sart(res.statusCode == 200, 'video adresi ${res.statusCode} döndü');
+          c.close(force: true);
+          await db.storage.from('listing-videos').remove([i.videoYol!]);
+          await db.from('listings').delete().eq('id', id);
+        });
         final baskasi = liste?.where((i) => i.saticiId != uid).toList() ?? [];
         if (baskasi.isEmpty) {
           sonuc.add('ADIM HATA  başkasının ilanı yok, mesajlaşma testleri atlandı');

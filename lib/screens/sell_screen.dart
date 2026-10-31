@@ -32,6 +32,8 @@ class _SellScreenState extends State<SellScreen> {
   late final TextEditingController _ilce = TextEditingController(text: app.profil?['ilce'] as String? ?? '');
   final _acik = TextEditingController();
   final List<FotoDosya> _fotolar = [];
+  FotoDosya? _video;
+  static const _videoLimit = 50 * 1024 * 1024;
   bool _yukleniyor = false;
   String? _hata;
 
@@ -57,6 +59,26 @@ class _SellScreenState extends State<SellScreen> {
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) bildir(context, 'Fotoğraf seçilemedi: $e');
+    }
+  }
+
+  Future<void> _videoEkle() async {
+    try {
+      final x = await ImagePicker().pickVideo(source: ImageSource.gallery, maxDuration: const Duration(seconds: 60));
+      if (x == null) return;
+      final b = await x.readAsBytes();
+      if (b.length > _videoLimit) {
+        if (mounted) setState(() => _hata = 'Video en fazla 50 MB olabilir (seçilen: ${(b.length / 1048576).toStringAsFixed(0)} MB). Daha kısa çekmeyi dene.');
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _video = FotoDosya(b, x.name, videoTipi(x.name));
+          _hata = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) bildir(context, 'Video seçilemedi: $e');
     }
   }
 
@@ -108,7 +130,7 @@ class _SellScreenState extends State<SellScreen> {
         'belgeler': _belgeler.toList(),
         'pazarlik': _pazarlik,
         'teslimat': _teslimat,
-      }, _fotolar);
+      }, _fotolar, video: _video);
       app.filtre = Filtre();
       app.arama = '';
       app.sekme = 0;
@@ -117,7 +139,7 @@ class _SellScreenState extends State<SellScreen> {
       Navigator.of(context).pop();
       bildir(context, 'İlanın yayınlandı');
     } catch (err) {
-      setState(() => _hata = 'İlan yayınlanamadı: $err\n(Fotoğraf yükleme hatasıysa 002_ek_ozellikler.sql dosyasının çalıştırıldığından emin ol.)');
+      setState(() => _hata = 'İlan yayınlanamadı: $err\n(Fotoğraf yükleme hatasıysa 002, video hatasıysa 007_video.sql çalıştırıldı mı?)');
     } finally {
       if (mounted) setState(() => _yukleniyor = false);
     }
@@ -345,6 +367,23 @@ class _SellScreenState extends State<SellScreen> {
                 ),
             ],
           ),
+          const SizedBox(height: 16),
+          _etiket('Video (isteğe bağlı · en fazla 60 sn, 50 MB)'),
+          if (_video == null)
+            OutlinedButton.icon(onPressed: _videoEkle, icon: const Icon(Icons.videocam_outlined), label: const Text('Video ekle'))
+          else
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+              child: Row(
+                children: [
+                  const Icon(Icons.videocam, color: Renk.yesil),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text('${_video!.ad} · ${(_video!.bytes.length / 1048576).toStringAsFixed(1)} MB', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
+                  IconButton(tooltip: 'Videoyu kaldır', onPressed: () => setState(() => _video = null), icon: const Icon(Icons.close)),
+                ],
+              ),
+            ),
           if (_hata != null)
             Padding(padding: const EdgeInsets.only(top: 12), child: Text(_hata!, style: const TextStyle(color: uyariRenk, fontWeight: FontWeight.w700))),
           const SizedBox(height: 18),

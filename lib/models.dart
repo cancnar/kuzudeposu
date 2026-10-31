@@ -101,6 +101,7 @@ class Ilan {
     this.mesafe,
     this.satildiAt,
     this.bitis,
+    this.videoYol,
     this.amac,
     this.belgeler = const [],
     this.pazarlik = false,
@@ -112,7 +113,7 @@ class Ilan {
   });
 
   final String id, saticiId, tur, cins, cinsiyet, satisSekli, il, ilce, durum;
-  final String? aciklama, amac;
+  final String? aciklama, amac, videoYol;
   final List<String> belgeler;
   final bool pazarlik;
   final String teslimat;
@@ -134,6 +135,7 @@ class Ilan {
   int get kgFiyat => (toplam / (adet * agirlik)).round();
   String get yer => '$ilce, $il';
   bool get aktif => durum == 'aktif';
+  bool get videoVar => videoYol != null && videoYol!.isNotEmpty;
   int? get kalanGun => bitis == null ? null : bitis!.difference(DateTime.now()).inDays;
   String? get amacAd => amac == null ? null : amacEtiket[amac];
   String get teslimatAd => teslimatEtiket[teslimat] ?? teslimat;
@@ -168,6 +170,7 @@ class Ilan {
       mesafe: mesafe,
       satildiAt: j['satildi_at'] == null ? null : DateTime.parse(j['satildi_at'] as String),
       bitis: j['expires_at'] == null ? null : DateTime.parse(j['expires_at'] as String),
+      videoYol: j['video_path'] as String?,
       amac: j['amac'] as String?,
       belgeler: ((j['belgeler'] as List?) ?? const []).map((e) => '$e').toList(),
       pazarlik: j['pazarlik'] as bool? ?? false,

@@ -141,6 +141,20 @@ class IlanKarti extends StatelessWidget {
                           child: Text('Sürü · ${i.adet} baş', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Renk.murekkep)),
                         ),
                       ),
+                    if (i.videoVar)
+                      Positioned(
+                        right: 10,
+                        bottom: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.play_arrow, color: Colors.white, size: 16),
+                            SizedBox(width: 2),
+                            Text('Video', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.white)),
+                          ]),
+                        ),
+                      ),
                     if (durumGoster && !i.aktif)
                       Positioned(
                         left: 10,

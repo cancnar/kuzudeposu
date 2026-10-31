@@ -102,6 +102,17 @@ void main() {
     expect(SaticiGuven(DateTime.now().subtract(const Duration(days: 3)), 2).yeni, false);
   });
 
+  testWidgets('videolu ilan kartı rozet gösterir', (t) async {
+    final i = Ilan.json({
+      'id': 'v', 'seller_id': 's', 'tur': 'kucukbas', 'cins': 'Akkaraman', 'cinsiyet': 'erkek', 'adet': 1, 'yas_min': 8, 'yas_max': 8,
+      'agirlik_kg': 50, 'toplam_fiyat': 20000, 'il': 'a', 'ilce': 'b', 'created_at': '2026-10-01T10:00:00Z', 'video_path': 'u/v/video.mp4',
+    });
+    expect(i.videoVar, true);
+    expect(ornek().videoVar, false);
+    await t.pumpWidget(MaterialApp(home: Scaffold(body: IlanKarti(ilan: i, onTap: () {}, favori: false, onFavori: () {}))));
+    expect(find.text('Video'), findsOneWidget);
+  });
+
   testWidgets('talep kartı çizilir, küçük ekranda taşmaz', (t) async {
     final talep = Talep.json({
       'id': 't', 'buyer_id': 'b', 'tur': 'kucukbas', 'cins': 'Akkaraman', 'adet': 12, 'amac': 'kurbanlik', 'butce_max': 150000,

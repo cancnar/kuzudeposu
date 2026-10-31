@@ -11,6 +11,13 @@ String? get uid => db.auth.currentUser?.id;
 
 const _saticiEmbed = 'seller:profiles!seller_id(full_name,rating_avg,rating_count)';
 
+String videoUrl(String yol) => db.storage.from('listing-videos').getPublicUrl(yol);
+
+String videoTipi(String ad) {
+  final uz = ad.contains('.') ? ad.split('.').last.toLowerCase() : 'mp4';
+  return switch (uz) { 'mov' => 'video/quicktime', 'webm' => 'video/webm', _ => 'video/mp4' };
+}
+
 String fotoUrl(String yol) => db.storage.from('listing-photos').getPublicUrl(yol);
 
 Future<void> fotolariDoldur(List<Ilan> liste) async {
@@ -125,7 +132,7 @@ class FotoDosya {
   final String ad, tip;
 }
 
-Future<String> ilanVer(Map<String, dynamic> alanlar, List<FotoDosya> fotolar) async {
+Future<String> ilanVer(Map<String, dynamic> alanlar, List<FotoDosya> fotolar, {FotoDosya? video}) async {
   final yeni = await db.from('listings').insert(alanlar).select('id').single();
   final id = yeni['id'] as String;
   try {
@@ -138,6 +145,12 @@ Future<String> ilanVer(Map<String, dynamic> alanlar, List<FotoDosya> fotolar) as
       satirlar.add({'listing_id': id, 'path': yol, 'sort_order': i});
     }
     await db.from('listing_photos').insert(satirlar);
+    if (video != null) {
+      final uz = video.ad.contains('.') ? video.ad.split('.').last.toLowerCase() : 'mp4';
+      final yol = '${uid!}/$id/video.$uz';
+      await db.storage.from('listing-videos').uploadBinary(yol, video.bytes, fileOptions: FileOptions(contentType: videoTipi(video.ad), upsert: true));
+      await db.from('listings').update({'video_path': yol}).eq('id', id);
+    }
   } catch (e) {
     await db.from('listings').delete().eq('id', id);
     rethrow;
