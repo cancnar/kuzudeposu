@@ -1,5 +1,6 @@
 // Gerçek Supabase projesine karşı uçtan uca test (CI'da çalışır).
-// Test kullanıcısı: 532 123 45 67 (Supabase'deki test numarası, kod 123456). Sonunda hesap silinir.
+// Test kullanıcısı: 555 999 99 99 (Supabase'de test numarası olarak 905559999999=123456 tanımlı olmalı).
+// Gerçek kullanıcı hesaplarına dokunmaz: o numarada profil varsa test durur. Sonunda test hesabı silinir.
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -9,6 +10,7 @@ import 'package:kuzu_deposu/data.dart';
 import 'package:kuzu_deposu/models.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+const testNo = '+905559999999';
 final sonuc = <String>[];
 int hataSayisi = 0;
 
@@ -40,6 +42,7 @@ void main() {
     testIstemci = SupabaseClient(supabaseUrl, supabasePublishableKey);
     final olusanFotolar = <String>[];
     String? kendiIlan;
+    var profilBizim = false;
     try {
       // ---------- Misafir (giriş yok) ----------
       final liste = await adim('misafir: ilan arama (filtresiz)', () async {
@@ -99,17 +102,21 @@ void main() {
 
       // ---------- Giriş ----------
       await adim('giriş: telefon kodu gönder + doğrula (test numarası)', () async {
-        await db.auth.signInWithOtp(phone: '+905321234567');
-        final r = await db.auth.verifyOTP(phone: '+905321234567', token: '123456', type: OtpType.sms);
+        await db.auth.signInWithOtp(phone: testNo);
+        final r = await db.auth.verifyOTP(phone: testNo, token: '123456', type: OtpType.sms);
         sart(r.session != null && uid != null, 'oturum açılamadı');
       });
       if (uid == null) {
         sonuc.add('Oturum açılamadığı için sonraki adımlar atlandı. Supabase > Authentication > Phone ayarlarını kontrol et.');
       } else {
-        await adim('giriş sonrası: profil henüz yok (null dönmeli)', () async {
-          final p = await db.from('profiles').select().eq('id', uid!).maybeSingle();
-          sart(p == null, 'profil zaten var');
-        });
+        final mevcut = await db.from('profiles').select().eq('id', uid!).maybeSingle();
+        if (mevcut != null) {
+          hataSayisi++;
+          sonuc.add('ADIM HATA  bu numarada gerçek bir profil var; test güvenlik için durdu (ayrı test numarası kullan)');
+          return;
+        }
+        profilBizim = true;
+        sonuc.add('ADIM OK    giriş sonrası: profil henüz yok');
         await adim('okuma sorguları (söz dizimi kontrolü)', () async {
           await favoriIlanlar();
           await favoriIdleri();
@@ -216,7 +223,7 @@ void main() {
       await adim('temizlik: fotoğrafları sil', () async {
         if (olusanFotolar.isNotEmpty) await db.storage.from('listing-photos').remove(olusanFotolar);
       });
-      if (uid != null) {
+      if (uid != null && profilBizim) {
         await adim('hesap silme (hesabimi_sil) + zincirleme temizlik', () async {
           await db.rpc('hesabimi_sil');
           await db.auth.signOut();
