@@ -124,6 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 clipBehavior: Clip.none,
                 children: [
                   IconButton.outlined(
+                    style: IconButton.styleFrom(side: const BorderSide(color: Renk.cizgi, width: 1.5), foregroundColor: Renk.yesil, backgroundColor: Colors.white),
                     tooltip: 'Bildirimler',
                     onPressed: () async {
                       if (!await girisGerekli(context)) return;

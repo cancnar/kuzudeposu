@@ -28,14 +28,16 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
+      body: LayoutBuilder(
+        builder: (context, kisit) => SingleChildScrollView(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: BoxConstraints(maxWidth: 480, minHeight: kisit.maxHeight),
+            child: IntrinsicHeight(
             child: Column(
               children: [
                 Container(
-                  height: 300,
+                  height: (kisit.maxHeight * 0.42).clamp(280.0, 420.0),
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     color: Renk.yesil,
@@ -52,9 +54,11 @@ class WelcomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                Padding(
+                Expanded(
+                  child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _madde('Telefonu doğrulanmış satıcılar'),
@@ -67,7 +71,6 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       OutlinedButton(
-                        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52), side: const BorderSide(color: Renk.yesil)),
                         onPressed: () {
                           app.misafir = true;
                           app.yenile();
@@ -82,10 +85,13 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                  ),
                 ),
               ],
             ),
+            ),
           ),
+        ),
         ),
       ),
     );

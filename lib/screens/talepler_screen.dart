@@ -197,8 +197,18 @@ class _TaleplerGovdesiState extends State<TaleplerGovdesi> {
             final l = s.data!;
             if (l.isEmpty) {
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: Text(_benim ? 'Henüz talebin yok.' : 'Şu an açık talep yok.', style: const TextStyle(color: Renk.soluk))),
+                padding: const EdgeInsets.symmetric(vertical: 36),
+                child: Column(
+                  children: [
+                    const Opacity(opacity: .5, child: Logo(boyut: 56)),
+                    const SizedBox(height: 14),
+                    Text(_benim ? 'Henüz talebin yok' : 'Şu an açık talep yok', style: baslik(20)),
+                    const SizedBox(height: 6),
+                    const Text('Aradığın hayvanı yayınla, uygun satıcılar sana ilanını önersin.', textAlign: TextAlign.center, style: TextStyle(color: Renk.soluk, height: 1.4)),
+                    const SizedBox(height: 16),
+                    FilledButton(onPressed: () => talepVerGit(context), child: const Text('Talep yayınla')),
+                  ],
+                ),
               );
             }
             return Column(

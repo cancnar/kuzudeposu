@@ -51,6 +51,52 @@ ThemeData kuzuTema() {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Renk.cizgi),
       ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Renk.yesil, width: 1.6),
+      ),
+      labelStyle: const TextStyle(color: Renk.soluk),
+    ),
+    dividerColor: Renk.cizgi,
+    progressIndicatorTheme: const ProgressIndicatorThemeData(color: Renk.yesil),
+    textSelectionTheme: const TextSelectionThemeData(cursorColor: Renk.yesil, selectionHandleColor: Renk.yesil),
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: Renk.krem,
+      surfaceTintColor: Colors.transparent,
+      showDragHandle: true,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: Renk.murekkep,
+      contentTextStyle: GoogleFonts.nunito(color: Renk.krem, fontWeight: FontWeight.w700),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Colors.white : Renk.soluk),
+      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Renk.yesil : Renk.cizgi),
+      trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Renk.yesil : Colors.white),
+        foregroundColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Colors.white : Renk.murekkep),
+        side: WidgetStateProperty.all(const BorderSide(color: Renk.cizgi)),
+        textStyle: WidgetStateProperty.all(GoogleFonts.nunito(fontWeight: FontWeight.w800, fontSize: 14)),
+        shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Renk.yesil,
+        minimumSize: const Size.fromHeight(52),
+        side: const BorderSide(color: Renk.yesil, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        textStyle: GoogleFonts.nunito(fontWeight: FontWeight.w800, fontSize: 16),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: Renk.yesil, textStyle: GoogleFonts.nunito(fontWeight: FontWeight.w800, fontSize: 15)),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(

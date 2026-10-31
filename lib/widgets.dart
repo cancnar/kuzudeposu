@@ -86,9 +86,11 @@ class FotoKutusu extends StatelessWidget {
     final bos = Container(
       height: yukseklik,
       width: double.infinity,
-      color: Renk.cizgi,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFEFE9D2), Color(0xFFDCE6D3)]),
+      ),
       alignment: Alignment.center,
-      child: Icon(Icons.pets, color: Renk.soluk.withOpacity(.5), size: yukseklik > 90 ? 36 : 22),
+      child: Opacity(opacity: .55, child: Logo(boyut: yukseklik > 90 ? 52 : 30)),
     );
     final u = url;
     return ClipRRect(
