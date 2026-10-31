@@ -45,6 +45,37 @@ Future<List<Ilan>> ilanAra(String q, Filtre f) async {
   return liste;
 }
 
+/// Aynı türdeki aktif ilanların kg fiyatı özeti (piyasa karşılaştırması).
+class FiyatOzeti {
+  FiyatOzeti(this.adet, this.medyan, this.enDusuk, this.enYuksek);
+  final int adet;
+  final double medyan, enDusuk, enYuksek;
+}
+
+Future<FiyatOzeti?> fiyatOzeti(Ilan i) async {
+  final r = await db.rpc('fiyat_ozeti', params: {'p_tur': i.tur, 'p_cins': i.cins, 'p_haric': i.id});
+  var l = r as List<dynamic>;
+  var m = l.isEmpty ? null : l.first as Map<String, dynamic>;
+  if (m == null || (m['adet'] as num) < 2) {
+    final r2 = await db.rpc('fiyat_ozeti', params: {'p_tur': i.tur, 'p_haric': i.id});
+    l = r2 as List<dynamic>;
+    m = l.isEmpty ? null : l.first as Map<String, dynamic>;
+  }
+  if (m == null || (m['adet'] as num) < 2 || m['medyan'] == null) return null;
+  return FiyatOzeti((m['adet'] as num).toInt(), (m['medyan'] as num).toDouble(), (m['en_dusuk'] as num).toDouble(), (m['en_yuksek'] as num).toDouble());
+}
+
+Future<void> ilanGoruntule(String id) async {
+  try {
+    await db.rpc('ilan_goruntule', params: {'p_id': id});
+  } catch (_) {}
+}
+
+Future<Map<String, dynamic>?> ilanIstatistik(String id) async {
+  final r = await db.rpc('ilan_istatistik', params: {'p_id': id}) as List<dynamic>;
+  return r.isEmpty ? null : r.first as Map<String, dynamic>;
+}
+
 Future<Ilan?> ilanGetir(String id) async {
   final r = await db.from('listings').select('*, $_saticiEmbed').eq('id', id).maybeSingle();
   if (r == null) return null;

@@ -172,6 +172,17 @@ class _FilterScreenState extends State<FilterScreen> {
               },
             ),
           ),
+          _grup('Satış amacı', _cipler('amac', ['Hepsi', ...amacEtiket.values])),
+          _grup(
+            'Belgeler',
+            Wrap(runSpacing: 8, children: [
+              for (final e in belgeEtiket.entries)
+                Cip(e.value, _f.belgeSecili.contains(e.key), () {
+                  setState(() => _f.belgeDegistir(e.key));
+                  _planla();
+                }),
+            ]),
+          ),
           _grup('Sıralama', _cipler('sirala', Filtre.siralamalar)),
           const SizedBox(height: 120),
         ],

@@ -20,6 +20,10 @@ class _SellScreenState extends State<SellScreen> {
   String _cinsiyet = 'disi';
   int _adet = 1;
   String _satis = 'birlikte';
+  String? _amac;
+  final Set<String> _belgeler = {};
+  bool _pazarlik = false;
+  String _teslimat = 'yerinde';
   final _y1 = TextEditingController();
   final _y2 = TextEditingController();
   final _kg = TextEditingController();
@@ -100,6 +104,10 @@ class _SellScreenState extends State<SellScreen> {
         'aciklama': _acik.text.trim().isEmpty ? null : _acik.text.trim(),
         'il': _il.text.trim(),
         'ilce': _ilce.text.trim(),
+        'amac': _amac,
+        'belgeler': _belgeler.toList(),
+        'pazarlik': _pazarlik,
+        'teslimat': _teslimat,
       }, _fotolar);
       app.filtre = Filtre();
       app.arama = '';
@@ -261,8 +269,38 @@ class _SellScreenState extends State<SellScreen> {
             ],
           ),
           const SizedBox(height: 14),
+          _etiket('Satış amacı (isteğe bağlı)'),
+          Wrap(runSpacing: 8, children: [
+            for (final e in amacEtiket.entries) Cip(e.value, _amac == e.key, () => setState(() => _amac = _amac == e.key ? null : e.key)),
+          ]),
+          const SizedBox(height: 14),
+          _etiket('Elindeki belgeler (alıcıya güven verir)'),
+          Wrap(runSpacing: 8, children: [
+            for (final e in belgeEtiket.entries)
+              Cip(e.value, _belgeler.contains(e.key), () => setState(() => _belgeler.contains(e.key) ? _belgeler.remove(e.key) : _belgeler.add(e.key))),
+          ]),
+          const SizedBox(height: 14),
+          _etiket('Teslimat'),
+          Wrap(runSpacing: 8, children: [
+            for (final e in teslimatEtiket.entries) Cip(e.value, _teslimat == e.key, () => setState(() => _teslimat = e.key)),
+          ]),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _pazarlik,
+            activeColor: Renk.yesil,
+            onChanged: (v) => setState(() => _pazarlik = v),
+            title: const Text('Pazarlık payı var', style: TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: const Text('Alıcılar sana mesajla teklif gönderebilir'),
+          ),
+          const SizedBox(height: 6),
           TextField(controller: _acik, maxLines: 3, maxLength: 2000, decoration: const InputDecoration(labelText: 'Açıklama (isteğe bağlı)', alignLabelWithHint: true)),
           const SizedBox(height: 6),
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: const Color(0xFFFFF3D6), borderRadius: BorderRadius.circular(10), border: Border.all(color: altin)),
+            child: const Text('Kendi hayvanının, güncel fotoğraflarını yükle. Başka ilandan alınan fotoğraf şikayet sebebidir ve ilan kaldırılır. Alıcıdan kapora isteme.', style: TextStyle(fontSize: 13, height: 1.4)),
+          ),
           _etiket('Fotoğraflar (en az 3, en fazla 8)'),
           Wrap(
             spacing: 8,

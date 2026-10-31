@@ -24,6 +24,8 @@ class _DetailScreenState extends State<DetailScreen> {
   List<Map<String, dynamic>> _yorumlar = [];
   bool _yuk = true;
   Object? _hata;
+  FiyatOzeti? _piyasa;
+  Map<String, dynamic>? _stat;
 
   @override
   void initState() {
@@ -45,6 +47,14 @@ class _DetailScreenState extends State<DetailScreen> {
         await fotolariDoldur([_i!]);
       }
       _yorumlar = await yorumlar(_i!.saticiId);
+      if (_i!.aktif) {
+        if (_benim) {
+          _stat = await ilanIstatistik(_i!.id).catchError((_) => null);
+        } else {
+          ilanGoruntule(_i!.id);
+        }
+        _piyasa = await fiyatOzeti(_i!).catchError((_) => null);
+      }
     } catch (e) {
       _hata = e;
     }
@@ -78,6 +88,117 @@ class _DetailScreenState extends State<DetailScreen> {
       if (mounted) bildir(context, 'Konuşma açılamadı: $e');
     }
   }
+
+  Future<void> _teklif() async {
+    if (!await girisGerekli(context)) return;
+    final c = TextEditingController();
+    final tutar = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Teklif ver'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('İstenen fiyat: ${tl(_i!.toplam)}', style: const TextStyle(color: Renk.soluk)),
+            const SizedBox(height: 10),
+            TextField(controller: c, autofocus: true, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Teklifin (₺)')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, c.text), child: const Text('Teklifi gönder')),
+        ],
+      ),
+    );
+    final t = sayiOku(tutar ?? '');
+    if (t == null || t <= 0) return;
+    try {
+      final id = await konusmaAc(_i!);
+      await mesajGonder(id, 'Merhaba, bu ilan için ${tl(t)} teklif ediyorum. Uygun olur mu?');
+      if (!mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatScreen(konusmaId: id)));
+    } catch (e) {
+      if (mounted) bildir(context, 'Teklif gönderilemedi: $e');
+    }
+  }
+
+  Widget _rozet(String yazi, {bool vurgu = false}) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: vurgu ? Renk.yesil : const Color(0xFFE8F0E4),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(yazi, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: vurgu ? Colors.white : Renk.yesil)),
+      );
+
+  Widget _piyasaKutusu(Ilan i) {
+    final p = _piyasa;
+    if (p == null) return const SizedBox.shrink();
+    final fark = (i.kgFiyat - p.medyan) / p.medyan * 100;
+    final String ozet;
+    final Color renk;
+    if (fark <= -8) {
+      ozet = 'Piyasanın %${fark.abs().round()} altında';
+      renk = Renk.yesil;
+    } else if (fark >= 8) {
+      ozet = 'Piyasanın %${fark.round()} üstünde';
+      renk = Renk.kiremit;
+    } else {
+      ozet = 'Piyasa fiyatına yakın';
+      renk = Renk.yesil;
+    }
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(ozet, style: TextStyle(fontWeight: FontWeight.w800, color: renk, fontSize: 15)),
+          const SizedBox(height: 2),
+          Text(
+            'Bu ilan ${sayi(i.kgFiyat)} ₺/kg. Benzer ${p.adet} ilanda ortanca ${sayi(p.medyan)} ₺/kg (${sayi(p.enDusuk)} – ${sayi(p.enYuksek)} ₺/kg).',
+            style: const TextStyle(color: Renk.soluk, fontSize: 13, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _istatistik() {
+    final st = _stat;
+    if (st == null) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      decoration: BoxDecoration(color: const Color(0xFFF1EBD6), borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          for (final e in [
+            ['Görüntülenme', '${st['goruntulenme']}'],
+            ['Favori', '${st['favori']}'],
+            ['Konuşma', '${st['konusma']}'],
+          ])
+            Column(children: [Text(e[1], style: baslik(22)), Text(e[0], style: const TextStyle(color: Renk.soluk, fontSize: 12))]),
+        ],
+      ),
+    );
+  }
+
+  Widget _guvenUyarisi() => Container(
+        margin: const EdgeInsets.only(top: 14),
+        padding: const EdgeInsets.all(12),
+        width: double.infinity,
+        decoration: BoxDecoration(color: const Color(0xFFFFF3D6), borderRadius: BorderRadius.circular(12), border: Border.all(color: altin)),
+        child: const Text(
+          '⚠  Güvenli alışveriş: Hayvanı yerinde görmeden kapora veya ön ödeme gönderme. Parayı ancak hayvanı teslim alırken öde. Şüpheli ilanı bildir.',
+          style: TextStyle(fontSize: 13, height: 1.45),
+        ),
+      );
 
   Future<void> _durum(String d, String mesaj) async {
     try {
@@ -218,6 +339,19 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text('${i.suru ? '${i.adet} baş · ' : ''}${i.yer}', style: const TextStyle(color: Renk.soluk)),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          if (i.amacAd != null) _rozet(i.amacAd!, vurgu: true),
+                          for (final b in i.belgeler) _rozet('✓ ${belgeEtiket[b] ?? b}'),
+                          if (i.pazarlik) _rozet('Pazarlık payı var'),
+                          _rozet(i.teslimatAd),
+                        ],
+                      ),
+                      if (i.aktif && !_benim) _piyasaKutusu(i),
+                      if (_benim && i.aktif) _istatistik(),
                       const SizedBox(height: 12),
                       GridView.count(
                         crossAxisCount: 2,
@@ -241,6 +375,7 @@ class _DetailScreenState extends State<DetailScreen> {
                         const SizedBox(height: 14),
                         Text(i.aciklama!, style: const TextStyle(height: 1.5)),
                       ],
+                      if (!_benim && i.aktif) _guvenUyarisi(),
                       const SizedBox(height: 18),
                       InkWell(
                         borderRadius: BorderRadius.circular(12),
@@ -327,8 +462,8 @@ class _DetailScreenState extends State<DetailScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: FilledButton(
-                            onPressed: () => bildir(context, 'Satıcılar numaralarını paylaşmaz. Uygulama içinden mesaj gönderebilirsin.'),
-                            child: const Text('Satıcıyı ara'),
+                            onPressed: i.aktif ? _teklif : null,
+                            child: const Text('Teklif ver'),
                           ),
                         ),
                       ],

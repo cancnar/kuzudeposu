@@ -165,6 +165,7 @@ void main() {
           final id = await ilanVer({
             'seller_id': uid, 'tur': 'kucukbas', 'cins': 'Akkaraman', 'cinsiyet': 'karisik', 'adet': 10, 'yas_min': 10, 'yas_max': 14,
             'agirlik_kg': 55, 'toplam_fiyat': 220000, 'satis_sekli': 'adet_adet', 'aciklama': 'CI test ilanı', 'il': 'Manisa', 'ilce': 'Salihli',
+            'amac': 'kurbanlik', 'belgeler': ['kupe', 'saglik_raporu'], 'pazarlik': true, 'teslimat': 'ikisi',
           }, [FotoDosya(png, 'a.png', 'image/png'), FotoDosya(png, 'b.png', 'image/png'), FotoDosya(png, 'c.png', 'image/png')]);
           kendiIlan = id;
           final i = await ilanGetir(id);
@@ -181,6 +182,19 @@ void main() {
           sart(m.any((i) => i.id == kendiIlan), 'ilanlarım listesinde yok');
           final a = await ilanAra('CI test'.isEmpty ? '' : '', Filtre({'il': 'Salihli'}));
           sart(a.any((i) => i.id == kendiIlan), 'aramada görünmüyor');
+        });
+        await adim('yeni alanlar: amaç / belge filtresi, fiyat özeti, görüntülenme, istatistik', () async {
+          final i = await ilanGetir(kendiIlan!);
+          sart(i!.amac == 'kurbanlik' && i.pazarlik && i.teslimat == 'ikisi' && i.belgeler.length == 2, 'yeni alanlar okunamadı');
+          final a = await ilanAra('', Filtre({'amac': 'Kurbanlık', 'belgeler': 'kupe,saglik_raporu'}));
+          sart(a.any((x) => x.id == kendiIlan), 'amaç + belge filtresiyle bulunamadı');
+          final b = await ilanAra('', Filtre({'amac': 'Besilik'}));
+          sart(!b.any((x) => x.id == kendiIlan), 'yanlış amaçta göründü');
+          final o = await fiyatOzeti(i);
+          sart(o == null || o.medyan > 0, 'fiyat özeti bozuk');
+          final st = await ilanIstatistik(kendiIlan!);
+          sart(st != null && st['goruntulenme'] != null, 'istatistik alınamadı');
+          await ilanGoruntule(kendiIlan!);
         });
         final baskasi = liste?.where((i) => i.saticiId != uid).toList() ?? [];
         if (baskasi.isEmpty) {

@@ -3,6 +3,25 @@ import 'dart:convert';
 const turEtiket = {'buyukbas': 'Büyükbaş', 'kucukbas': 'Küçükbaş', 'kanatli': 'Kanatlı', 'at': 'At'};
 final Map<String, String> turKod = {for (final e in turEtiket.entries) e.value: e.key};
 const cinsiyetEtiket = {'disi': 'Dişi', 'erkek': 'Erkek', 'karisik': 'Karışık'};
+const amacEtiket = {
+  'kurbanlik': 'Kurbanlık',
+  'besi': 'Besilik',
+  'damizlik': 'Damızlık',
+  'sut_yumurta': 'Süt / yumurta',
+  'kesim': 'Kesimlik',
+  'diger': 'Diğer',
+};
+final Map<String, String> amacKod = {for (final e in amacEtiket.entries) e.value: e.key};
+const belgeEtiket = {
+  'kupe': 'Küpeli',
+  'saglik_raporu': 'Sağlık raporu',
+  'pasaport': 'Pasaportlu',
+  'nakil': 'Nakil belgesi',
+  'asi': 'Aşıları tam',
+};
+final Map<String, String> belgeKod = {for (final e in belgeEtiket.entries) e.value: e.key};
+const teslimatEtiket = {'yerinde': 'Yerinden teslim', 'nakliye': 'Nakliye ile', 'ikisi': 'Yerinde veya nakliye'};
+
 const turSecenekleri = ['Büyükbaş', 'Küçükbaş', 'Kanatlı', 'At'];
 const cinsListesi = <String, List<String>>{
   'Büyükbaş': ['Simental', 'Holstein', 'Montofon', 'Şarole', 'Angus', 'Yerli kara'],
@@ -81,13 +100,22 @@ class Ilan {
     this.aciklama,
     this.mesafe,
     this.satildiAt,
+    this.amac,
+    this.belgeler = const [],
+    this.pazarlik = false,
+    this.teslimat = 'yerinde',
+    this.goruntulenme = 0,
     this.saticiAd = 'Satıcı',
     this.saticiPuan = 0,
     this.saticiPuanSayisi = 0,
   });
 
   final String id, saticiId, tur, cins, cinsiyet, satisSekli, il, ilce, durum;
-  final String? aciklama;
+  final String? aciklama, amac;
+  final List<String> belgeler;
+  final bool pazarlik;
+  final String teslimat;
+  final int goruntulenme;
   final int adet, yasMin, yasMax;
   final double agirlik, toplam;
   final double? mesafe;
@@ -105,6 +133,8 @@ class Ilan {
   int get kgFiyat => (toplam / (adet * agirlik)).round();
   String get yer => '$ilce, $il';
   bool get aktif => durum == 'aktif';
+  String? get amacAd => amac == null ? null : amacEtiket[amac];
+  String get teslimatAd => teslimatEtiket[teslimat] ?? teslimat;
 
   factory Ilan.json(Map<String, dynamic> j, {String? ad, num? puan, int? puanSayisi, double? mesafe}) {
     final s = j['seller'];
@@ -135,6 +165,11 @@ class Ilan {
       olusturma: DateTime.parse(j['created_at'] as String),
       mesafe: mesafe,
       satildiAt: j['satildi_at'] == null ? null : DateTime.parse(j['satildi_at'] as String),
+      amac: j['amac'] as String?,
+      belgeler: ((j['belgeler'] as List?) ?? const []).map((e) => '$e').toList(),
+      pazarlik: j['pazarlik'] as bool? ?? false,
+      teslimat: j['teslimat'] as String? ?? 'yerinde',
+      goruntulenme: (j['goruntulenme'] as num?)?.toInt() ?? 0,
       saticiAd: sAd ?? 'Satıcı',
       saticiPuan: (sPuan ?? 0).toDouble(),
       saticiPuanSayisi: sSayi ?? 0,
@@ -162,6 +197,8 @@ class Filtre {
     'fiyatMin': '',
     'fiyatMax': '',
     'il': '',
+    'amac': 'Hepsi',
+    'belgeler': '',
     'sirala': 'En yeni',
   };
   static const siralamalar = ['En yeni', 'Fiyat: artan', 'Fiyat: azalan'];
@@ -189,6 +226,14 @@ class Filtre {
       ..addAll(varsayilan);
   }
 
+  List<String> get belgeSecili => this['belgeler'].isEmpty ? <String>[] : this['belgeler'].split(',');
+
+  void belgeDegistir(String kod) {
+    final l = belgeSecili;
+    l.contains(kod) ? l.remove(kod) : l.add(kod);
+    this['belgeler'] = l.join(',');
+  }
+
   String get imza => jsonEncode(v);
 
   String _aralik(String a, String b) => '${this[a].isEmpty ? '…' : this[a]} – ${this[b].isEmpty ? '…' : this[b]}';
@@ -210,6 +255,8 @@ class Filtre {
       o.add(AktifEtiket('${_aralik('fiyatMin', 'fiyatMax')} ₺', ['fiyatMin', 'fiyatMax']));
     }
     if (this['il'].isNotEmpty) o.add(AktifEtiket(this['il'], ['il']));
+    if (this['amac'] != 'Hepsi') o.add(AktifEtiket(this['amac'], ['amac']));
+    if (belgeSecili.isNotEmpty) o.add(AktifEtiket(belgeSecili.map((k) => belgeEtiket[k] ?? k).join(' + '), ['belgeler']));
     return o;
   }
 
@@ -234,6 +281,8 @@ class Filtre {
     n('fiyatMin', 'p_fiyat_min');
     n('fiyatMax', 'p_fiyat_max');
     if (this['il'].trim().isNotEmpty) p['p_il'] = this['il'].trim();
+    if (this['amac'] != 'Hepsi') p['p_amac'] = amacKod[this['amac']];
+    if (belgeSecili.isNotEmpty) p['p_belgeler'] = belgeSecili;
     p['p_sort'] = switch (this['sirala']) {
       'Fiyat: artan' => 'fiyat_artan',
       'Fiyat: azalan' => 'fiyat_azalan',

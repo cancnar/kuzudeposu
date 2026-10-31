@@ -56,6 +56,31 @@ void main() {
     expect(f['satis'], 'Hepsi');
   });
 
+  test('amaç ve belge filtresi + ilan alanları', () {
+    final f = Filtre({'amac': 'Kurbanlık'});
+    f.belgeDegistir('kupe');
+    f.belgeDegistir('saglik_raporu');
+    final p = f.rpc('');
+    expect(p['p_amac'], 'kurbanlik');
+    expect(p['p_belgeler'], ['kupe', 'saglik_raporu']);
+    expect(f.aktif().length, 2);
+    f.belgeDegistir('kupe');
+    expect(f.belgeSecili, ['saglik_raporu']);
+    f.sifirla(['amac', 'belgeler']);
+    expect(f.rpc('').containsKey('p_amac'), false);
+    expect(f.rpc('').containsKey('p_belgeler'), false);
+    final i = Ilan.json({
+      'id': 'a', 'seller_id': 's', 'tur': 'kucukbas', 'cins': 'Akkaraman', 'cinsiyet': 'erkek', 'adet': 1, 'yas_min': 8, 'yas_max': 8,
+      'agirlik_kg': 50, 'toplam_fiyat': 20000, 'il': 'Manisa', 'ilce': 'Salihli', 'created_at': '2026-10-01T10:00:00Z',
+      'amac': 'kurbanlik', 'belgeler': ['kupe', 'asi'], 'pazarlik': true, 'teslimat': 'ikisi', 'goruntulenme': 42,
+    });
+    expect(i.amacAd, 'Kurbanlık');
+    expect(i.belgeler, ['kupe', 'asi']);
+    expect(i.pazarlik, true);
+    expect(i.teslimatAd, 'Yerinde veya nakliye');
+    expect(i.goruntulenme, 42);
+  });
+
   testWidgets('ilan kartı küçük ekranda ve büyük yazıda taşmıyor', (t) async {
     for (final olcek in [1.0, 1.25]) {
       for (final adet in [1, 12]) {
