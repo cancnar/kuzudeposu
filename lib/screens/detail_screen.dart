@@ -207,6 +207,37 @@ class _DetailScreenState extends State<DetailScreen> {
         ),
       );
 
+  Future<void> _uzat() async {
+    try {
+      await ilanUzat(_i!);
+      app.ilanlariYenile();
+      if (!mounted) return;
+      bildir(context, 'İlan süresi 30 gün uzatıldı');
+      _i = null;
+      _yukle();
+    } catch (e) {
+      if (mounted) bildir(context, 'Süre uzatılamadı: $e');
+    }
+  }
+
+  Widget _sureKutusu(Ilan i) {
+    final k = i.kalanGun;
+    if (k == null) return const SizedBox.shrink();
+    final az = k <= 7;
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+      width: double.infinity,
+      decoration: BoxDecoration(color: az ? const Color(0xFFFFF3D6) : const Color(0xFFF1EBD6), borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        children: [
+          Expanded(child: Text(k <= 0 ? 'İlanın süresi doluyor' : 'İlan $k gün sonra yayından kalkar', style: TextStyle(fontWeight: FontWeight.w700, color: az ? Renk.kiremit : Renk.murekkep))),
+          TextButton(onPressed: _uzat, child: const Text('30 gün uzat')),
+        ],
+      ),
+    );
+  }
+
   Future<void> _durum(String d, String mesaj) async {
     try {
       await ilanDurumu(_i!.id, d);
@@ -359,6 +390,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                       if (i.aktif && !_benim) _piyasaKutusu(i),
                       if (_benim && i.aktif) _istatistik(),
+                      if (_benim && i.aktif) _sureKutusu(i),
                       const SizedBox(height: 12),
                       GridView.count(
                         crossAxisCount: 2,

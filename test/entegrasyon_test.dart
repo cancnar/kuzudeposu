@@ -196,6 +196,12 @@ void main() {
           sart(st != null && st['goruntulenme'] != null, 'istatistik alınamadı');
           await ilanGoruntule(kendiIlan!);
         });
+        await adim('ilan süresini 30 gün uzat', () async {
+          final once = (await ilanGetir(kendiIlan!))!;
+          await ilanUzat(once);
+          final sonra = (await ilanGetir(kendiIlan!))!;
+          sart(sonra.bitis != null && once.bitis != null && sonra.bitis!.difference(once.bitis!).inDays >= 29, 'süre uzamadı');
+        });
         final baskasi = liste?.where((i) => i.saticiId != uid).toList() ?? [];
         if (baskasi.isEmpty) {
           sonuc.add('ADIM HATA  başkasının ilanı yok, mesajlaşma testleri atlandı');

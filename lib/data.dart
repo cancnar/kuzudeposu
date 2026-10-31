@@ -145,6 +145,12 @@ Future<String> ilanVer(Map<String, dynamic> alanlar, List<FotoDosya> fotolar) as
   return id;
 }
 
+/// İlan süresini 30 gün uzatır (kalan süreye eklenir).
+Future<void> ilanUzat(Ilan i) {
+  final baz = (i.bitis != null && i.bitis!.isAfter(DateTime.now())) ? i.bitis! : DateTime.now();
+  return db.from('listings').update({'expires_at': baz.add(const Duration(days: 30)).toUtc().toIso8601String()}).eq('id', i.id);
+}
+
 Future<void> ilanDurumu(String id, String durum) => db.from('listings').update({'durum': durum}).eq('id', id);
 
 // ---- Mesajlaşma ----

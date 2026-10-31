@@ -82,6 +82,13 @@ void main() {
     expect(i.pazarlik, true);
     expect(i.teslimatAd, 'Yerinde veya nakliye');
     expect(i.goruntulenme, 42);
+    expect(i.kalanGun, isNull);
+    final j = Ilan.json({
+      'id': 'b', 'seller_id': 's', 'tur': 'kucukbas', 'cins': 'X', 'cinsiyet': 'erkek', 'adet': 1, 'yas_min': 8, 'yas_max': 8,
+      'agirlik_kg': 50, 'toplam_fiyat': 20000, 'il': 'a', 'ilce': 'b', 'created_at': '2026-10-01T10:00:00Z',
+      'expires_at': DateTime.now().add(const Duration(days: 5, hours: 2)).toUtc().toIso8601String(),
+    });
+    expect(j.kalanGun, 5);
   });
 
   test('sevk belgeleri: il içi / iller arası', () {
