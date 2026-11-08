@@ -208,11 +208,14 @@ class _DetailScreenState extends State<DetailScreen> {
             style: const TextStyle(color: Renk.soluk, fontSize: 12, fontFeatures: [FontFeature.tabularFigures()]),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [Text('${sayi(p.enDusuk)} ₺/kg'), Text('Ortanca ${sayi(p.medyan)}'), Text('${sayi(p.enYuksek)} ₺/kg')],
+              children: [Text('${sayi(lo)} ₺/kg'), Text('Ortanca ${sayi(p.medyan)}'), Text('${sayi(hi)} ₺/kg')],
             ),
           ),
           const SizedBox(height: 6),
-          Text('Bu ilan ${sayi(i.kgFiyat)} ₺/kg.', style: const TextStyle(color: Renk.soluk, fontSize: 13)),
+          Text(
+            'Benzer ilanlar ${sayi(p.enDusuk)}–${sayi(p.enYuksek)} ₺/kg, bu ilan ${sayi(i.kgFiyat)} ₺/kg.',
+            style: const TextStyle(color: Renk.soluk, fontSize: 13),
+          ),
         ],
       ),
     );

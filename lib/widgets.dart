@@ -166,9 +166,7 @@ class Cip extends StatelessWidget {
               child: AnimatedContainer(
                 duration: Hareket.renk,
                 curve: Curves.ease,
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: secili ? Renk.yesil : Renk.kart,
                   borderRadius: BorderRadius.circular(999),
