@@ -69,7 +69,7 @@ class Shell extends StatelessWidget {
   Future<void> _ilanVer(BuildContext c) async {
     final secim = await showModalBottomSheet<String>(
       context: c,
-      sheetAnimationStyle: Hareket.altSayfa,
+      sheetAnimationStyle: Hareket.altSayfa(c),
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),

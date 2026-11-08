@@ -30,6 +30,7 @@ class AppState extends ChangeNotifier {
     'quiet': true,
     'photo': true,
     'online': false,
+    'azalt': false,
   };
   String? _uid;
   Timer? _sayac;

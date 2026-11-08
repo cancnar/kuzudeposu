@@ -40,7 +40,11 @@ class _FotoGaleriState extends State<FotoGaleri> {
 
   void _git(int p) {
     if (p < 0 || p >= widget.fotolar.length) return;
-    _c.animateToPage(p, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+    if (Hareket.azalt(context)) {
+      _c.jumpToPage(p);
+    } else {
+      _c.animateToPage(p, duration: const Duration(milliseconds: 280), curve: Hareket.cikis);
+    }
   }
 
   @override

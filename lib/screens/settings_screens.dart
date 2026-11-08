@@ -47,6 +47,12 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              AnahtarSatir(
+                'Hareketi azalt',
+                app.tercih['azalt'] ?? false,
+                (_) => app.tercihDegistir('azalt'),
+                alt: 'Kayan geçişler yerine solma; telefonun Hareketi Azalt ayarı da geçerli',
+              ),
             ]),
             Bolum('Destek', [
               Satir('Kullanım koşulları', onTap: () => _metin(context, 'Kullanım koşulları')),

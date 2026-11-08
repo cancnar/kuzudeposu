@@ -31,7 +31,11 @@ class KuzuDeposuApp extends StatelessWidget {
       builder: (context, child) => AnimatedBuilder(
         animation: app,
         builder: (_, __) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(app.yaziOlcek)),
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(app.yaziOlcek),
+            // HIG: hareket isteğe bağlı olmalı. Sistem ayarı ya da uygulamadaki "Hareketi azalt".
+            disableAnimations: MediaQuery.of(context).disableAnimations || (app.tercih['azalt'] ?? false),
+          ),
           child: child!,
         ),
       ),

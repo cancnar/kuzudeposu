@@ -121,6 +121,7 @@ class _TaleplerGovdesiState extends State<TaleplerGovdesi> {
     }
     final secilen = await showModalBottomSheet<Ilan>(
       context: context,
+      sheetAnimationStyle: Hareket.altSayfa(context),
       builder: (ctx) => SafeArea(
         child: ListView(
           shrinkWrap: true,

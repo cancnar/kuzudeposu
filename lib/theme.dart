@@ -37,13 +37,38 @@ class Hareket {
   static const renk = Duration(milliseconds: 180);
   static const gosterge = Duration(milliseconds: 240);
 
+  /// Sistemde ya da uygulamada "Hareketi azalt" açık mı?
+  static bool azalt(BuildContext c) => MediaQuery.maybeOf(c)?.disableAnimations ?? false;
+
   /// Alt sayfalar: açılış 320 ms çekmece eğrisi, kapanış daha hızlı.
-  static AnimationStyle get altSayfa => AnimationStyle(
-        duration: const Duration(milliseconds: 320),
-        reverseDuration: const Duration(milliseconds: 200),
-        curve: cekmece,
-        reverseCurve: Curves.easeOutCubic,
-      );
+  /// "Hareketi azalt" açıksa kayma yok (HIG: x/y eksenindeki geçişler kaldırılır).
+  static AnimationStyle altSayfa(BuildContext c) => azalt(c)
+      ? AnimationStyle.noAnimation
+      : AnimationStyle(
+          duration: const Duration(milliseconds: 320),
+          reverseDuration: const Duration(milliseconds: 200),
+          curve: cekmece,
+          reverseCurve: Curves.easeOutCubic,
+        );
+
+  /// Açılır/kapanır bölümler (ExpansionTile).
+  static AnimationStyle acilir(BuildContext c) =>
+      azalt(c) ? AnimationStyle.noAnimation : AnimationStyle(duration: const Duration(milliseconds: 220), curve: cikis, reverseCurve: Curves.easeOutCubic);
+}
+
+/// Sayfa geçişi: normalde iOS kayması (kenardan geri kaydırma çalışır);
+/// "Hareketi azalt" açıksa kısa bir solma (HIG: hareket yerine solma).
+class KuzuSayfaGecisi extends PageTransitionsBuilder {
+  const KuzuSayfaGecisi();
+  static const _ios = CupertinoPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    if (Hareket.azalt(context)) {
+      return FadeTransition(opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut, reverseCurve: Curves.easeIn), child: child);
+    }
+    return _ios.buildTransitions(route, context, animation, secondaryAnimation, child);
+  }
 }
 
 /// Kenarlık yerine katmanlı, yarı saydam gölge.
@@ -71,7 +96,7 @@ ThemeData kuzuTema() {
     fontWeight: FontWeight.w700,
     color: Renk.murekkep,
   );
-  const cupertino = CupertinoPageTransitionsBuilder();
+  const cupertino = KuzuSayfaGecisi();
   final ince = OutlineInputBorder(
     borderRadius: BorderRadius.circular(14),
     borderSide: const BorderSide(color: Color(0x1F3A3220)),

@@ -432,6 +432,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           ikon: app.favoriler.contains(i.id) ? Icons.favorite : Icons.favorite_border,
                           ipucu: app.favoriler.contains(i.id) ? 'Favorilerden çıkar' : 'Favorilere ekle',
                           renk: Renk.kiremit,
+                          titresim: true,
                           onPressed: _favori,
                         ),
                       ),

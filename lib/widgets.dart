@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'models.dart';
@@ -89,22 +90,47 @@ class Rozet extends StatelessWidget {
 enum RozetTuru { kupe, ok, duz }
 
 /// Fotoğrafın üstünde duran yuvarlak buton (geri, favori).
+/// İkon değişince (ör. favoriye eklenince) 160 ms ölçek + solma ile yer değiştirir;
+/// "Hareketi azalt" açıksa yalnızca solma. [titresim] dokununca hafif titreşim verir.
 class YuzenDugme extends StatelessWidget {
-  const YuzenDugme({super.key, required this.ikon, required this.ipucu, required this.onPressed, this.renk = Renk.murekkep});
+  const YuzenDugme({super.key, required this.ikon, required this.ipucu, required this.onPressed, this.renk = Renk.murekkep, this.titresim = false});
   final IconData ikon;
   final String ipucu;
   final VoidCallback? onPressed;
   final Color renk;
+  final bool titresim;
   @override
-  Widget build(BuildContext context) => Basma(
-        olcek: 0.92,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(color: Renk.kart.withValues(alpha: 0.92), shape: BoxShape.circle, boxShadow: Golge.yuzen),
-          child: IconButton(tooltip: ipucu, onPressed: onPressed, icon: Icon(ikon, color: renk, size: 22), padding: EdgeInsets.zero),
+  Widget build(BuildContext context) {
+    final azalt = Hareket.azalt(context);
+    final cb = onPressed;
+    return Basma(
+      olcek: 0.92,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(color: Renk.kart.withValues(alpha: 0.92), shape: BoxShape.circle, boxShadow: Golge.yuzen),
+        child: IconButton(
+          tooltip: ipucu,
+          padding: EdgeInsets.zero,
+          onPressed: cb == null
+              ? null
+              : () {
+                  if (titresim) HapticFeedback.lightImpact();
+                  cb();
+                },
+          icon: AnimatedSwitcher(
+            duration: Hareket.basma,
+            switchInCurve: Hareket.cikis,
+            switchOutCurve: Curves.easeOut,
+            transitionBuilder: (child, anim) => azalt
+                ? FadeTransition(opacity: anim, child: child)
+                : FadeTransition(opacity: anim, child: ScaleTransition(scale: Tween(begin: 0.8, end: 1.0).animate(anim), child: child)),
+            child: Icon(ikon, key: ValueKey(ikon), color: renk, size: 22),
+          ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class Logo extends StatelessWidget {
@@ -285,6 +311,7 @@ class IlanKarti extends StatelessWidget {
                               ipucu: favori ? 'Favorilerden çıkar' : 'Favorilere ekle',
                               onPressed: onFavori,
                               renk: Renk.kiremit,
+                              titresim: true,
                             ),
                           ),
                       ],
@@ -471,7 +498,7 @@ Future<bool> onayIste(BuildContext c, String baslikYazi, String metin, String du
   final r = await showModalBottomSheet<bool>(
     context: c,
     showDragHandle: true,
-    sheetAnimationStyle: Hareket.altSayfa,
+    sheetAnimationStyle: Hareket.altSayfa(c),
     builder: (ctx) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),

@@ -63,6 +63,7 @@ class AliciRehberi extends StatelessWidget {
         child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
+          expansionAnimationStyle: Hareket.acilir(context),
           title: const Text('Satın almadan önce kontrol et', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
           subtitle: eksik.isEmpty ? null : Text('${eksik.length} belge ilanda belirtilmemiş', style: const TextStyle(color: Renk.kiremit, fontSize: 12.5, fontWeight: FontWeight.w700)),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),

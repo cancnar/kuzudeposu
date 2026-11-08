@@ -61,6 +61,7 @@ class _ChatScreenState extends State<ChatScreen> {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      sheetAnimationStyle: Hareket.altSayfa(context),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
