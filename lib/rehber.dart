@@ -54,15 +54,16 @@ class AliciRehberi extends StatelessWidget {
     final gerekli = gerekliBelgeler(ilan, aliciIl);
     final eksik = eksikBelgeler(ilan, aliciIl);
     return Container(
-      margin: const EdgeInsets.only(top: 14),
+      margin: const EdgeInsets.only(top: 16),
+      decoration: kutu(18),
       child: Material(
-        color: Colors.white,
+        type: MaterialType.transparency,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Renk.cizgi)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          title: const Text('Satın almadan önce kontrol et', style: TextStyle(fontWeight: FontWeight.w800)),
+          title: const Text('Satın almadan önce kontrol et', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
           subtitle: eksik.isEmpty ? null : Text('${eksik.length} belge ilanda belirtilmemiş', style: const TextStyle(color: Renk.kiremit, fontSize: 12.5, fontWeight: FontWeight.w700)),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
           expandedCrossAxisAlignment: CrossAxisAlignment.start,

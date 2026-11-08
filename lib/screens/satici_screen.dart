@@ -32,7 +32,7 @@ class SaticiBaslik extends StatelessWidget {
   Widget _kutu(String deger, String etiket) => Expanded(
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+          decoration: kutu(14.0),
           child: Column(
             children: [
               FittedBox(fit: BoxFit.scaleDown, child: Text(deger, style: baslik(20))),
@@ -90,7 +90,7 @@ class SaticiBaslik extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+              decoration: kutu(14.0),
               child: Column(
                 children: [
                   for (var k = 5; k >= 1; k--)
@@ -217,7 +217,7 @@ class _SaticiScreenState extends State<SaticiScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
               width: double.infinity,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+              decoration: kutu(14.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

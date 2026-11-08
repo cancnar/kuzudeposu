@@ -23,29 +23,64 @@ class Shell extends StatelessWidget {
         _ => const SizedBox.shrink(),
       };
 
+  Widget _secenek(BuildContext ctx, String deger, IconData ikon, String baslikYazi, String aciklama, Color zemin, Color ikonRenk) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Semantics(
+          button: true,
+          label: baslikYazi,
+          hint: aciklama,
+          excludeSemantics: true,
+          onTap: () => Navigator.pop(ctx, deger),
+          child: Basma(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.pop(ctx, deger),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: kutu(18),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(color: zemin, borderRadius: BorderRadius.circular(15)),
+                      child: Icon(ikon, color: ikonRenk, size: 26),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(baslikYazi, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 2),
+                          Text(aciklama, style: const TextStyle(fontSize: 14, color: Renk.soluk)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Renk.soluk),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
   Future<void> _ilanVer(BuildContext c) async {
     final secim = await showModalBottomSheet<String>(
       context: c,
+      sheetAnimationStyle: Hareket.altSayfa,
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Ne yapmak istiyorsun?', style: baslik(21)),
-              const SizedBox(height: 12),
-              FilledButton(onPressed: () => Navigator.pop(ctx, 'sat'), child: const Text('Hayvan satıyorum')),
-              const SizedBox(height: 4),
-              const Text('İlan ver: fotoğraf, fiyat ve bilgilerle.', style: TextStyle(color: Renk.soluk, fontSize: 13)),
-              const SizedBox(height: 14),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52), side: const BorderSide(color: Renk.yesil)),
-                onPressed: () => Navigator.pop(ctx, 'ara'),
-                child: const Text('Hayvan arıyorum'),
-              ),
-              const SizedBox(height: 4),
-              const Text('Talep yayınla: satıcılar sana uygun ilanını önerir.', style: TextStyle(color: Renk.soluk, fontSize: 13)),
+              Padding(padding: const EdgeInsets.fromLTRB(4, 0, 4, 14), child: Text('Ne yapmak istiyorsun?', style: baslik(24))),
+              _secenek(ctx, 'sat', Icons.photo_camera_outlined, 'Hayvan satıyorum', 'Fotoğraf ve videoyla ilan ver.', Renk.okZemin, Renk.okYazi),
+              _secenek(ctx, 'ara', Icons.manage_search, 'Hayvan arıyorum', 'Talep yayınla, satıcılar sana ilan önersin.', Renk.kupe, Renk.murekkep),
+              Center(child: TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç', style: TextStyle(color: Renk.soluk)))),
             ],
           ),
         ),
@@ -79,33 +114,43 @@ class Shell extends StatelessWidget {
             ),
           ),
           bottomNavigationBar: Container(
-            decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Renk.cizgi))),
+            decoration: BoxDecoration(color: Renk.kart.withValues(alpha: 0.96), border: const Border(top: BorderSide(color: Renk.ayrac))),
             child: SafeArea(
               top: false,
               child: SizedBox(
-                height: 64,
+                height: 62,
                 child: Row(
                   children: [
-                    _oge(context, 0, 'Ana sayfa', Icons.home_outlined, Icons.home),
+                    _oge(context, 0, 'Ana sayfa', Icons.home_outlined, Icons.home_rounded),
                     _oge(context, 1, 'Favoriler', Icons.favorite_border, Icons.favorite),
                     Expanded(
                       child: Center(
                         child: Semantics(
                           label: 'İlan ver',
                           button: true,
-                          child: GestureDetector(
-                            onTap: () => _ilanVer(context),
-                            child: Container(
-                              width: 52,
-                              height: 52,
-                              decoration: const BoxDecoration(color: Renk.kiremit, shape: BoxShape.circle),
-                              child: const Icon(Icons.add, color: Colors.white, size: 30),
+                          excludeSemantics: true,
+                          onTap: () => _ilanVer(context),
+                          child: Basma(
+                            olcek: 0.94,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => _ilanVer(context),
+                              child: Container(
+                                width: 56,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: Renk.yesil,
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: const [BoxShadow(color: Color(0x662F5D3A), blurRadius: 14, spreadRadius: -6, offset: Offset(0, 6))],
+                                ),
+                                child: const Icon(Icons.add_rounded, color: Renk.krem, size: 28),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                    _oge(context, 2, 'Mesajlar', Icons.mail_outline, Icons.mail, rozet: app.okunmamisMesaj),
+                    _oge(context, 2, 'Mesajlar', Icons.chat_bubble_outline, Icons.chat_bubble, rozet: app.okunmamisMesaj),
                     _oge(context, 3, 'Profil', Icons.person_outline, Icons.person),
                   ],
                 ),
@@ -119,42 +164,56 @@ class Shell extends StatelessWidget {
 
   Widget _oge(BuildContext c, int i, String ad, IconData ikon, IconData dolu, {int rozet = 0}) {
     final secili = app.sekme == i;
+    final renk = secili ? Renk.yesil : Renk.soluk;
+    void sec() {
+      app.sekme = i;
+      app.yenile();
+    }
+
     return Expanded(
-      child: InkWell(
-        onTap: () {
-          app.sekme = i;
-          app.yenile();
-        },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
+      child: Semantics(
+        button: true,
+        selected: secili,
+        label: rozet > 0 ? '$ad, $rozet okunmamış' : ad,
+        excludeSemantics: true,
+        onTap: sec,
+        child: Basma(
+          olcek: 0.94,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: sec,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(secili ? dolu : ikon, color: secili ? Renk.yesil : Renk.soluk, size: 26),
-                if (rozet > 0)
-                  Positioned(
-                    right: -8,
-                    top: -4,
-                    child: Container(
-                      constraints: const BoxConstraints(minWidth: 18),
-                      height: 18,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(color: Renk.kiremit, borderRadius: BorderRadius.circular(9)),
-                      alignment: Alignment.center,
-                      child: Text('$rozet', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
-                    ),
-                  ),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(secili ? dolu : ikon, color: renk, size: 25),
+                    if (rozet > 0)
+                      Positioned(
+                        right: -9,
+                        top: -4,
+                        child: Container(
+                          constraints: const BoxConstraints(minWidth: 18),
+                          height: 18,
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          decoration: BoxDecoration(color: Renk.kiremit, borderRadius: BorderRadius.circular(9), border: Border.all(color: Renk.kart, width: 1.5)),
+                          alignment: Alignment.center,
+                          child: Text('$rozet', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(ad, style: TextStyle(fontSize: 11, fontWeight: secili ? FontWeight.w800 : FontWeight.w700, color: renk)),
               ],
             ),
-            Text(ad, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: secili ? Renk.yesil : Renk.soluk)),
-          ],
+          ),
         ),
       ),
     );
   }
 }
-
 /// Giriş yapmamış kullanıcıya gösterilen alan.
 class GirisIste extends StatelessWidget {
   const GirisIste(this.baslikYazi, this.aciklama, {super.key});

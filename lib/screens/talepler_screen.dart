@@ -20,29 +20,29 @@ class TalepKarti extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = talep;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
       width: double.infinity,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Renk.cizgi)),
+      decoration: kutu(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(child: Text(t.baslik, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17))),
+              Expanded(child: Text(t.baslik, style: baslik(19))),
               Text(goreli(t.olusturma), style: const TextStyle(color: Renk.soluk, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 4),
           Text('${t.adet} baş · ${t.il}${t.amacAd == null ? '' : ' · ${t.amacAd}'}', style: const TextStyle(color: Renk.soluk)),
-          if (t.butce != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text('Bütçe: en fazla ${tl(t.butce!)}', style: const TextStyle(fontWeight: FontWeight.w800, color: Renk.kiremit))),
+          if (t.butce != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text('Bütçe: en fazla ${tl(t.butce!)}', style: const TextStyle(fontWeight: FontWeight.w800, color: Renk.murekkep))),
           if (t.aciklama != null && t.aciklama!.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text(t.aciklama!, style: const TextStyle(height: 1.4))),
           const SizedBox(height: 8),
           Row(
             children: [
               Expanded(child: Text(benim ? 'Senin talebin${t.aktif ? '' : ' · kapandı'}' : t.aliciAd, style: const TextStyle(color: Renk.soluk, fontSize: 13))),
               if (benim && t.aktif) TextButton(onPressed: onKapat, child: const Text('Talebi kapat')),
-              if (!benim) FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 16)), onPressed: onOner, child: const Text('İlanımı öner')),
+              if (!benim) FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 44), padding: const EdgeInsets.symmetric(horizontal: 16), backgroundColor: Renk.okZemin, foregroundColor: Renk.okYazi, textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)), onPressed: onOner, child: const Text('İlanımı öner')),
             ],
           ),
         ],
@@ -329,7 +329,7 @@ class _TalepVerScreenState extends State<TalepVerScreen> {
           _et('Kaç baş?'),
           Container(
             height: 56,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+            decoration: kutu(14.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

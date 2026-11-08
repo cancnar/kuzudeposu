@@ -9,13 +9,102 @@ TextStyle baslik(double boyut, {Color? renk}) =>
 
 const altin = Color(0xFFE8C872);
 const yildizRenk = Color(0xFF7A5200);
-const acikYesil = Color(0xFFE8F0DC);
+const acikYesil = Renk.okZemin;
 const uyariRenk = Color(0xFFA32D2D);
+
+/// Kenarlık yerine gölgeli kart yüzeyi.
+BoxDecoration kutu([double yaricap = 18, List<BoxShadow> golge = Golge.kart]) =>
+    BoxDecoration(color: Renk.kart, borderRadius: BorderRadius.circular(yaricap), boxShadow: golge);
 
 void bildir(BuildContext c, String m) {
   ScaffoldMessenger.of(c)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(m), behavior: SnackBarBehavior.floating, duration: const Duration(seconds: 3)));
+}
+
+/// Basılabilen her şey parmak değince 0,97'ye küçülür (160 ms, güçlü ease-out).
+/// "Hareketi azalt" açıksa küçülme yapılmaz.
+class Basma extends StatefulWidget {
+  const Basma({super.key, required this.child, this.olcek = 0.97, this.etkin = true});
+  final Widget child;
+  final double olcek;
+  final bool etkin;
+  @override
+  State<Basma> createState() => _BasmaState();
+}
+
+class _BasmaState extends State<Basma> {
+  bool _basili = false;
+  void _ayarla(bool b) {
+    if (_basili != b && mounted) setState(() => _basili = b);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final azalt = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final kucuk = widget.etkin && !azalt && _basili;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => _ayarla(true),
+      onPointerUp: (_) => _ayarla(false),
+      onPointerCancel: (_) => _ayarla(false),
+      child: AnimatedScale(
+        scale: kucuk ? widget.olcek : 1,
+        duration: Hareket.basma,
+        curve: Hareket.cikis,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Küçük bilgi rozeti (küpe, belge, amaç).
+class Rozet extends StatelessWidget {
+  const Rozet(this.yazi, {super.key, this.tur = RozetTuru.duz, this.kucuk = false});
+  final String yazi;
+  final RozetTuru tur;
+  final bool kucuk;
+  @override
+  Widget build(BuildContext context) {
+    final (zemin, yaziRenk, ikon) = switch (tur) {
+      RozetTuru.kupe => (Renk.kupe, Renk.murekkep, Icons.sell_outlined),
+      RozetTuru.ok => (Renk.okZemin, Renk.okYazi, Icons.check),
+      RozetTuru.duz => (Renk.zemin2, Renk.murekkep, null),
+    };
+    final boy = kucuk ? 12.0 : 13.0;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: kucuk ? 8 : 10, vertical: kucuk ? 3 : 5),
+      decoration: BoxDecoration(color: zemin, borderRadius: BorderRadius.circular(999)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (ikon != null) ...[Icon(ikon, size: boy + 1, color: yaziRenk), const SizedBox(width: 4)],
+          Flexible(child: Text(yazi, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: boy, fontWeight: FontWeight.w800, color: yaziRenk))),
+        ],
+      ),
+    );
+  }
+}
+
+enum RozetTuru { kupe, ok, duz }
+
+/// Fotoğrafın üstünde duran yuvarlak buton (geri, favori).
+class YuzenDugme extends StatelessWidget {
+  const YuzenDugme({super.key, required this.ikon, required this.ipucu, required this.onPressed, this.renk = Renk.murekkep});
+  final IconData ikon;
+  final String ipucu;
+  final VoidCallback? onPressed;
+  final Color renk;
+  @override
+  Widget build(BuildContext context) => Basma(
+        olcek: 0.92,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(color: Renk.kart.withValues(alpha: 0.92), shape: BoxShape.circle, boxShadow: Golge.yuzen),
+          child: IconButton(tooltip: ipucu, onPressed: onPressed, icon: Icon(ikon, color: renk, size: 22), padding: EdgeInsets.zero),
+        ),
+      );
 }
 
 class Logo extends StatelessWidget {
@@ -55,6 +144,7 @@ class _LogoCizici extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter old) => false;
 }
 
+/// Seçim çipi: seçiliyken yeşil dolgu; renk geçişi 180 ms, basınca küçülür.
 class Cip extends StatelessWidget {
   const Cip(this.yazi, this.secili, this.onTap, {super.key});
   final String yazi;
@@ -62,16 +152,35 @@ class Cip extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: ChoiceChip(
-          label: Text(yazi),
+        padding: const EdgeInsets.only(right: 8, top: 3, bottom: 3),
+        child: Semantics(
+          button: true,
           selected: secili,
-          onSelected: (_) => onTap(),
-          selectedColor: Renk.yesil,
-          backgroundColor: Colors.white,
-          showCheckmark: false,
-          labelStyle: TextStyle(color: secili ? Colors.white : Renk.murekkep, fontWeight: FontWeight.w700),
-          side: const BorderSide(color: Renk.cizgi),
+          label: yazi,
+          excludeSemantics: true,
+          onTap: onTap,
+          child: Basma(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTap,
+              child: AnimatedContainer(
+                duration: Hareket.renk,
+                curve: Curves.ease,
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: secili ? Renk.yesil : Renk.kart,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: Golge.hafif,
+                ),
+                child: Text(
+                  yazi,
+                  style: TextStyle(color: secili ? Renk.krem : Renk.murekkep, fontWeight: FontWeight.w800, fontSize: 14),
+                ),
+              ),
+            ),
+          ),
         ),
       );
 }
@@ -86,11 +195,9 @@ class FotoKutusu extends StatelessWidget {
     final bos = Container(
       height: yukseklik,
       width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFEFE9D2), Color(0xFFDCE6D3)]),
-      ),
+      color: const Color(0xFFE9E2CB),
       alignment: Alignment.center,
-      child: Opacity(opacity: .55, child: Logo(boyut: yukseklik > 90 ? 52 : 30)),
+      child: Opacity(opacity: .45, child: Logo(boyut: yukseklik > 90 ? 52 : 30)),
     );
     final u = url;
     return ClipRRect(
@@ -100,6 +207,23 @@ class FotoKutusu extends StatelessWidget {
           : Image.network(u, height: yukseklik, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, __, ___) => bos),
     );
   }
+}
+
+class _FotoEtiket extends StatelessWidget {
+  const _FotoEtiket(this.yazi, {this.zemin = altin, this.yaziRenk = Renk.murekkep, this.ikon});
+  final String yazi;
+  final Color zemin;
+  final Color yaziRenk;
+  final IconData? ikon;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: EdgeInsets.fromLTRB(ikon == null ? 10 : 8, 5, 10, 5),
+        decoration: BoxDecoration(color: zemin, borderRadius: BorderRadius.circular(999)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (ikon != null) ...[Icon(ikon, color: yaziRenk, size: 15), const SizedBox(width: 3)],
+          Text(yazi, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: yaziRenk)),
+        ]),
+      );
 }
 
 class IlanKarti extends StatelessWidget {
@@ -117,145 +241,142 @@ class IlanKarti extends StatelessWidget {
     final alt = i.suru
         ? '${i.adet} baş · ${i.yasMetni} · ort. ${sayi(i.agirlik)} kg'
         : '${i.yasMetni} · ${sayi(i.agirlik)} kg';
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Renk.cizgi)),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          InkWell(
-            onTap: onTap,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
+    final kupeli = i.belgeler.contains('kupe');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Basma(
+        olcek: 0.985,
+        child: Container(
+          decoration: kutu(18),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(18),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FotoKutusu(url: i.foto.isEmpty ? null : i.foto.first, yukseklik: 130),
-                    if (i.suru)
-                      Positioned(
-                        left: 10,
-                        bottom: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(color: altin, borderRadius: BorderRadius.circular(8)),
-                          child: Text('Sürü · ${i.adet} baş', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Renk.murekkep)),
-                        ),
-                      ),
-                    if (i.videoVar)
-                      Positioned(
-                        right: 10,
-                        bottom: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-                          child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                            Icon(Icons.play_arrow, color: Colors.white, size: 16),
-                            SizedBox(width: 2),
-                            Text('Video', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.white)),
-                          ]),
-                        ),
-                      ),
-                    if (durumGoster && !i.aktif)
-                      Positioned(
-                        left: 10,
-                        top: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(color: Renk.murekkep, borderRadius: BorderRadius.circular(8)),
-                          child: Text(i.durum == 'satildi' ? (i.satildiAt != null ? 'Satıldı · ${goreli(i.satildiAt!)}' : 'Satıldı') : 'Yayında değil',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.white)),
-                        ),
-                      ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                    Stack(
+                      children: [
+                        FotoKutusu(url: i.foto.isEmpty ? null : i.foto.first, yukseklik: 190, yaricap: 13),
+                        if (i.suru) Positioned(left: 10, top: 10, child: _FotoEtiket('Sürü · ${i.adet} baş')),
+                        if (i.videoVar)
+                          const Positioned(
+                            left: 10,
+                            bottom: 10,
+                            child: _FotoEtiket('Video', zemin: Color(0x9E1C180F), yaziRenk: Colors.white, ikon: Icons.play_arrow_rounded),
+                          ),
+                        if (durumGoster && !i.aktif)
+                          Positioned(
+                            right: 10,
+                            bottom: 10,
+                            child: _FotoEtiket(
+                              i.durum == 'satildi' ? (i.satildiAt != null ? 'Satıldı · ${goreli(i.satildiAt!)}' : 'Satıldı') : 'Yayında değil',
+                              zemin: Renk.murekkep,
+                              yaziRenk: Colors.white,
+                            ),
+                          ),
+                        if (kalp)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: YuzenDugme(
+                              ikon: favori ? Icons.favorite : Icons.favorite_border,
+                              ipucu: favori ? 'Favorilerden çıkar' : 'Favorilere ekle',
+                              onPressed: onFavori,
+                              renk: Renk.kiremit,
+                            ),
+                          ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: Text('${i.cins} (${i.cinsiyetAd.toLowerCase()})', style: baslik(18), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                          const SizedBox(width: 8),
-                          Text(tl(i.toplam), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Renk.kiremit)),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text('$alt · ${sayi(i.kgFiyat)} ₺/kg', style: const TextStyle(color: Renk.soluk, fontSize: 13)),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(child: Text(i.yer, style: const TextStyle(color: Renk.soluk, fontSize: 13), overflow: TextOverflow.ellipsis)),
-                          Text(
-                            i.saticiPuanSayisi > 0 ? '★ ${puanYaz(i.saticiPuan)} (${i.saticiPuanSayisi})' : 'Yeni satıcı',
-                            style: const TextStyle(color: yildizRenk, fontWeight: FontWeight.w800, fontSize: 13),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Expanded(child: Text('${i.cins} (${i.cinsiyetAd.toLowerCase()})', style: baslik(19), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              const SizedBox(width: 10),
+                              Text(tl(i.toplam), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Renk.murekkep, fontFeatures: [FontFeature.tabularFigures()])),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text('$alt · ${sayi(i.kgFiyat)} ₺/kg', style: const TextStyle(color: Renk.soluk, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.place_outlined, size: 16, color: Renk.soluk),
+                              const SizedBox(width: 3),
+                              Expanded(child: Text(i.yer, style: const TextStyle(color: Renk.soluk, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              if (kupeli) ...[const Rozet('Küpeli', tur: RozetTuru.kupe, kucuk: true), const SizedBox(width: 8)],
+                              Text(
+                                i.saticiPuanSayisi > 0 ? '★ ${puanYaz(i.saticiPuan)}' : 'Yeni satıcı',
+                                style: const TextStyle(color: yildizRenk, fontWeight: FontWeight.w800, fontSize: 13),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          if (kalp)
-          Positioned(
-            top: 6,
-            right: 6,
-            child: Material(
-              color: Colors.white.withOpacity(.92),
-              shape: const CircleBorder(),
-              child: IconButton(
-                tooltip: favori ? 'Favorilerden çıkar' : 'Favorilere ekle',
-                onPressed: onFavori,
-                icon: Icon(favori ? Icons.favorite : Icons.favorite_border, color: Renk.kiremit),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
+/// Başlıklı, gölgeli satır grubu (ayarlar, profil menüsü).
 class Bolum extends StatelessWidget {
   const Bolum(this.baslikYazi, this.cocuklar, {super.key});
   final String baslikYazi;
   final List<Widget> cocuklar;
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
-            child: Text(baslikYazi, style: const TextStyle(color: Renk.soluk, fontWeight: FontWeight.w800)),
-          ),
-          Container(
-            decoration: const BoxDecoration(color: Colors.white, border: Border.symmetric(horizontal: BorderSide(color: Renk.cizgi))),
-            child: Column(children: cocuklar),
-          ),
-        ],
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (baslikYazi.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+                child: Text(baslikYazi, style: const TextStyle(color: Renk.soluk, fontWeight: FontWeight.w800, fontSize: 13)),
+              ),
+            Container(
+              decoration: kutu(18),
+              clipBehavior: Clip.antiAlias,
+              child: Column(children: cocuklar),
+            ),
+          ],
+        ),
       );
 }
 
 class Satir extends StatelessWidget {
-  const Satir(this.yazi, {super.key, this.deger, this.onTap, this.renk});
+  const Satir(this.yazi, {super.key, this.deger, this.onTap, this.renk, this.ikon});
   final String yazi;
   final String? deger;
   final VoidCallback? onTap;
   final Color? renk;
+  final IconData? ikon;
   @override
   Widget build(BuildContext context) => InkWell(
         onTap: onTap,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 56),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Renk.cizgi))),
+          constraints: const BoxConstraints(minHeight: 54),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Renk.ayrac))),
           child: Row(
             children: [
+              if (ikon != null) ...[Icon(ikon, size: 22, color: renk ?? Renk.yesil), const SizedBox(width: 12)],
               Expanded(child: Text(yazi, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: renk ?? Renk.murekkep))),
               if (deger != null) Flexible(child: Text(deger!, style: const TextStyle(color: Renk.soluk), overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 4),
@@ -275,8 +396,8 @@ class AnahtarSatir extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         constraints: const BoxConstraints(minHeight: 60),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Renk.cizgi))),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Renk.ayrac))),
         child: Row(
           children: [
             Expanded(
@@ -314,7 +435,7 @@ class Bos extends StatelessWidget {
               Text(aciklama, style: const TextStyle(color: Renk.soluk, height: 1.5), textAlign: TextAlign.center),
               if (dugme != null) ...[
                 const SizedBox(height: 20),
-                FilledButton(onPressed: onDugme, child: Text(dugme!)),
+                Basma(child: FilledButton(onPressed: onDugme, child: Text(dugme!))),
               ],
             ],
           ),
@@ -352,6 +473,7 @@ Future<bool> onayIste(BuildContext c, String baslikYazi, String metin, String du
   final r = await showModalBottomSheet<bool>(
     context: c,
     showDragHandle: true,
+    sheetAnimationStyle: Hareket.altSayfa,
     builder: (ctx) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -363,16 +485,19 @@ Future<bool> onayIste(BuildContext c, String baslikYazi, String metin, String du
             const SizedBox(height: 8),
             Text(metin, style: const TextStyle(color: Renk.soluk, height: 1.5)),
             const SizedBox(height: 20),
-            FilledButton(
-              style: tehlike ? FilledButton.styleFrom(backgroundColor: Renk.kiremit) : null,
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(dugme),
+            Basma(
+              child: FilledButton(
+                style: tehlike ? FilledButton.styleFrom(backgroundColor: Renk.kiremit, foregroundColor: Colors.white) : null,
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(dugme),
+              ),
             ),
             const SizedBox(height: 10),
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Vazgeç'),
+            Basma(
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Vazgeç'),
+              ),
             ),
           ],
         ),

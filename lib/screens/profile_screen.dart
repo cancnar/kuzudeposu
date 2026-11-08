@@ -40,53 +40,64 @@ class ProfileScreen extends StatelessWidget {
     final ad = (p['full_name'] as String?) ?? '';
     final rol = {'yetistirici': 'Yetiştirici', 'tuccar': 'Tüccar', 'alici': 'Alıcı'}[p['role']] ?? '';
     final tel = maske(db.auth.currentUser?.phone);
+    final puanSayisi = ((p['rating_count'] as num?) ?? 0).toInt();
     return ListView(
+      padding: const EdgeInsets.only(bottom: 24),
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
           child: Row(
             children: [
-              CircleAvatar(radius: 32, backgroundColor: Renk.cizgi, child: Text(ad.isEmpty ? '?' : ad.substring(0, 1).toUpperCase(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Renk.yesil))),
+              CircleAvatar(
+                radius: 32,
+                backgroundColor: Renk.okZemin,
+                child: Text(ad.isEmpty ? '?' : ad.substring(0, 1).toUpperCase(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Renk.okYazi)),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(ad, style: baslik(22)),
+                    Text(ad, style: baslik(24)),
                     Text('$tel · ${p['ilce'] ?? ''}, ${p['il'] ?? ''}', style: const TextStyle(color: Renk.soluk, fontSize: 13)),
-                    Text('✓ Telefonu doğrulanmış · $rol', style: const TextStyle(color: Renk.yesil, fontWeight: FontWeight.w800, fontSize: 13)),
-                    if (((p['rating_count'] as num?) ?? 0) > 0)
-                      Text('★ ${puanYaz((p['rating_avg'] as num?) ?? 0)} (${p['rating_count']} değerlendirme)', style: const TextStyle(color: yildizRenk, fontWeight: FontWeight.w800, fontSize: 13)),
+                    const SizedBox(height: 2),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.verified_outlined, size: 15, color: Renk.okYazi),
+                          const SizedBox(width: 4),
+                          Text('Telefonu doğrulanmış${rol.isEmpty ? '' : ' · $rol'}', style: const TextStyle(color: Renk.okYazi, fontWeight: FontWeight.w800, fontSize: 13)),
+                        ]),
+                        if (puanSayisi > 0)
+                          Text('★ ${puanYaz((p['rating_avg'] as num?) ?? 0)} ($puanSayisi değerlendirme)', style: const TextStyle(color: yildizRenk, fontWeight: FontWeight.w800, fontSize: 13)),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ],
           ),
         ),
-        Container(
-          decoration: const BoxDecoration(border: Border(top: BorderSide(color: Renk.cizgi)), color: Colors.white),
-          child: Column(
-            children: [
-              Satir('İlanlarım', onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MineScreen()))),
-              Satir('Favorilerim', onTap: () {
-                app.sekme = 1;
-                app.yenile();
-              }),
-              Satir('Kayıtlı aramalarım', onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SavedSearchesScreen()))),
-              Satir('Ayarlar', onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()))),
-              Satir('Yardım ve destek', onTap: () => bildir(context, 'Yardım sayfası yayın öncesi eklenecek')),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              OutlinedButton(style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)), onPressed: () => _cikis(context), child: const Text('Çıkış yap')),
-              TextButton(onPressed: () => _sil(context), child: const Text('Hesabımı sil', style: TextStyle(color: uyariRenk))),
-            ],
-          ),
-        ),
+        Bolum('', [
+          Satir('İlanlarım', ikon: Icons.list_alt_rounded, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MineScreen()))),
+          Satir('Favorilerim', ikon: Icons.favorite_border, onTap: () {
+            app.sekme = 1;
+            app.yenile();
+          }),
+          Satir('Kayıtlı aramalarım', ikon: Icons.bookmark_border, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SavedSearchesScreen()))),
+        ]),
+        Bolum('', [
+          Satir('Ayarlar', ikon: Icons.settings_outlined, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()))),
+          Satir('Yardım ve destek', ikon: Icons.help_outline, onTap: () => bildir(context, 'Yardım sayfası yayın öncesi eklenecek')),
+        ]),
+        Bolum('', [
+          Satir('Çıkış yap', ikon: Icons.logout_rounded, renk: Renk.kiremit, onTap: () => _cikis(context)),
+        ]),
+        const SizedBox(height: 8),
+        Center(child: TextButton(onPressed: () => _sil(context), child: const Text('Hesabımı sil', style: TextStyle(color: Renk.soluk, fontSize: 13)))),
       ],
     );
   }

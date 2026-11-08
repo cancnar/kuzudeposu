@@ -167,7 +167,7 @@ class NoCodeScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Renk.cizgi)),
+                decoration: kutu(14.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -249,7 +249,7 @@ class _LockScreenState extends State<LockScreen> {
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Renk.cizgi)),
+                decoration: kutu(14.0),
                 child: Column(
                   children: [
                     const Text('Kalan süre', style: TextStyle(color: Renk.soluk)),

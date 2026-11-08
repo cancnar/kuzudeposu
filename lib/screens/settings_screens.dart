@@ -221,7 +221,7 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                 Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Renk.cizgi)),
+                  decoration: kutu(14.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

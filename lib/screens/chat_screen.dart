@@ -197,7 +197,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('${k.ilanCins} · ${k.ilanAdet} baş', style: const TextStyle(fontWeight: FontWeight.w800)),
-                          if (k.ilanFiyat != null) Text(tl(k.ilanFiyat!), style: const TextStyle(fontWeight: FontWeight.w800, color: Renk.kiremit)),
+                          if (k.ilanFiyat != null) Text(tl(k.ilanFiyat!), style: const TextStyle(fontWeight: FontWeight.w800, color: Renk.murekkep)),
                         ],
                       ),
                     ),
@@ -258,8 +258,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.fromLTRB(12, 9, 12, 6),
                         decoration: BoxDecoration(
-                          color: benim ? Renk.yesil : Colors.white,
-                          border: benim ? null : Border.all(color: Renk.cizgi),
+                          color: benim ? Renk.yesil : Renk.kart,
+                          boxShadow: benim ? null : Golge.hafif,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(16),
                             topRight: const Radius.circular(16),

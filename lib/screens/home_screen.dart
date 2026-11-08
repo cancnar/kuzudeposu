@@ -123,16 +123,24 @@ class _HomeScreenState extends State<HomeScreen> {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  IconButton.outlined(
-                    style: IconButton.styleFrom(side: const BorderSide(color: Renk.cizgi, width: 1.5), foregroundColor: Renk.yesil, backgroundColor: Colors.white),
-                    tooltip: 'Bildirimler',
-                    onPressed: () async {
-                      if (!await girisGerekli(context)) return;
-                      if (!context.mounted) return;
-                      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
-                      app.sayaclariYenile();
-                    },
-                    icon: const Icon(Icons.notifications_none),
+                  Basma(
+                    olcek: 0.92,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(color: Renk.kart, shape: BoxShape.circle, boxShadow: Golge.hafif),
+                      child: IconButton(
+                        tooltip: 'Bildirimler',
+                        padding: EdgeInsets.zero,
+                        onPressed: () async {
+                          if (!await girisGerekli(context)) return;
+                          if (!context.mounted) return;
+                          await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                          app.sayaclariYenile();
+                        },
+                        icon: const Icon(Icons.notifications_none_rounded, color: Renk.murekkep),
+                      ),
+                    ),
                   ),
                   if (app.okunmamisBildirim > 0)
                     Positioned(
@@ -142,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         constraints: const BoxConstraints(minWidth: 20),
                         height: 20,
                         padding: const EdgeInsets.symmetric(horizontal: 5),
-                        decoration: BoxDecoration(color: Renk.kiremit, borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: Renk.kiremit, borderRadius: BorderRadius.circular(10), border: Border.all(color: Renk.krem, width: 1.5)),
                         alignment: Alignment.center,
                         child: Text('${app.okunmamisBildirim}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
                       ),
@@ -152,15 +160,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          SegmentedButton<int>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: 0, label: Text('İlanlar')),
-              ButtonSegment(value: 1, label: Text('Alıcı talepleri')),
-            ],
-            selected: {app.anaSekme},
-            onSelectionChanged: (v) {
-              app.anaSekme = v.first;
+          KayanSekme(
+            secenekler: const ['İlanlar', 'Alıcı talepleri'],
+            secili: app.anaSekme,
+            degisti: (v) {
+              app.anaSekme = v;
               app.yenile();
             },
           ),
@@ -172,18 +176,51 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _q,
-                  onChanged: _aramaDegisti,
-                  textInputAction: TextInputAction.search,
-                  decoration: const InputDecoration(hintText: 'Cins, il veya ilçe ara', prefixIcon: Icon(Icons.search), contentPadding: EdgeInsets.symmetric(vertical: 14)),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), boxShadow: Golge.hafif),
+                  child: TextField(
+                    controller: _q,
+                    onChanged: _aramaDegisti,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: 'Cins, il veya ilçe ara',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
-              FilledButton(
-                style: FilledButton.styleFrom(minimumSize: const Size(0, 52), padding: const EdgeInsets.symmetric(horizontal: 16)),
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(fullscreenDialog: true, builder: (_) => const FilterScreen())),
-                child: Text(aktif.isEmpty ? 'Filtre' : 'Filtre (${aktif.length})'),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Basma(
+                    olcek: 0.94,
+                    child: SizedBox(
+                      width: 52,
+                      height: 52,
+                      child: IconButton.filled(
+                        tooltip: aktif.isEmpty ? 'Filtre' : 'Filtre (${aktif.length} etkin)',
+                        style: IconButton.styleFrom(backgroundColor: Renk.yesil, foregroundColor: Renk.krem, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                        onPressed: () => Navigator.of(context).push(MaterialPageRoute(fullscreenDialog: true, builder: (_) => const FilterScreen())),
+                        icon: const Icon(Icons.tune_rounded),
+                      ),
+                    ),
+                  ),
+                  if (aktif.isNotEmpty)
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: altin, shape: BoxShape.circle, border: Border.all(color: Renk.krem, width: 1.5)),
+                        child: Text('${aktif.length}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Renk.murekkep)),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),
@@ -210,8 +247,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.only(right: 8),
                       child: InputChip(
                         label: Text(a.metin),
-                        backgroundColor: acikYesil,
+                        backgroundColor: Renk.okZemin,
                         side: BorderSide.none,
+                        shape: const StadiumBorder(),
                         labelStyle: const TextStyle(color: Renk.yesil, fontWeight: FontWeight.w700, fontSize: 13),
                         onDeleted: () {
                           app.filtre = f.kopya()..sifirla(a.alanlar);
@@ -223,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           const SizedBox(height: 8),
-          Text('${liste?.length ?? '…'} ilan · ${f['sirala']}', style: const TextStyle(color: Renk.soluk, fontWeight: FontWeight.w700)),
+          Text('${liste?.length ?? '…'} ilan · ${f['sirala']}', style: const TextStyle(color: Renk.soluk, fontWeight: FontWeight.w700, fontSize: 13)),
           const SizedBox(height: 8),
           if (_hata != null)
             HataKutusu(_hata!, tekrar: _yukle)
@@ -267,6 +305,74 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetailScreen(ilan: i))),
               ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// İki seçenekli sekme: beyaz gösterge 240 ms güçlü ease-out ile kayar, içerik anında değişir.
+class KayanSekme extends StatelessWidget {
+  const KayanSekme({super.key, required this.secenekler, required this.secili, required this.degisti});
+  final List<String> secenekler;
+  final int secili;
+  final ValueChanged<int> degisti;
+
+  @override
+  Widget build(BuildContext context) {
+    final n = secenekler.length;
+    final azalt = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: Renk.zemin2, borderRadius: BorderRadius.circular(14)),
+      child: Stack(
+        children: [
+          AnimatedAlign(
+            alignment: Alignment(n == 1 ? 0 : -1 + 2 * secili / (n - 1), 0),
+            duration: azalt ? Duration.zero : Hareket.gosterge,
+            curve: Hareket.cikis,
+            child: FractionallySizedBox(
+              widthFactor: 1 / n,
+              heightFactor: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Renk.kart,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x1A3A3220), blurRadius: 2, offset: Offset(0, 1)),
+                    BoxShadow(color: Color(0x1F3A3220), blurRadius: 8, spreadRadius: -2, offset: Offset(0, 2)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: Row(
+            children: [
+              for (var k = 0; k < n; k++)
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    selected: k == secili,
+                    label: secenekler[k],
+                    excludeSemantics: true,
+                    onTap: () => degisti(k),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => degisti(k),
+                      child: Center(
+                        child: Text(
+                          secenekler[k],
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: k == secili ? Renk.murekkep : Renk.soluk),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          ),
         ],
       ),
     );

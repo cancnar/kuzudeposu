@@ -131,15 +131,6 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  Widget _rozet(String yazi, {bool vurgu = false}) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: vurgu ? Renk.yesil : const Color(0xFFE8F0E4),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(yazi, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: vurgu ? Colors.white : Renk.yesil)),
-      );
-
   Widget _piyasaKutusu(Ilan i) {
     final p = _piyasa;
     if (p == null) return const SizedBox.shrink();
@@ -148,28 +139,80 @@ class _DetailScreenState extends State<DetailScreen> {
     final Color renk;
     if (fark <= -8) {
       ozet = 'Piyasanın %${fark.abs().round()} altında';
-      renk = Renk.yesil;
+      renk = Renk.okYazi;
     } else if (fark >= 8) {
       ozet = 'Piyasanın %${fark.round()} üstünde';
       renk = Renk.kiremit;
     } else {
       ozet = 'Piyasa fiyatına yakın';
-      renk = Renk.yesil;
+      renk = Renk.okYazi;
     }
+    // Ölçek: benzer ilanların en düşüğü ile en yükseği, iki yanda biraz pay.
+    final lo = [p.enDusuk, i.kgFiyat].reduce((a, b) => a < b ? a : b).toDouble();
+    final hi = [p.enYuksek, i.kgFiyat].reduce((a, b) => a > b ? a : b).toDouble();
+    final pay = ((hi - lo) * 0.12).clamp(1.0, double.infinity).toDouble();
+    final min = lo - pay, max = hi + pay;
+    double konum(num v) => ((v - min) / (max - min)).clamp(0.0, 1.0).toDouble();
     return Container(
-      margin: const EdgeInsets.only(top: 14),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
       width: double.infinity,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+      decoration: kutu(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(ozet, style: TextStyle(fontWeight: FontWeight.w800, color: renk, fontSize: 15)),
-          const SizedBox(height: 2),
-          Text(
-            'Bu ilan ${sayi(i.kgFiyat)} ₺/kg. Benzer ${p.adet} ilanda ortanca ${sayi(p.medyan)} ₺/kg (${sayi(p.enDusuk)} – ${sayi(p.enYuksek)} ₺/kg).',
-            style: const TextStyle(color: Renk.soluk, fontSize: 13, height: 1.4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(child: Text(ozet, style: TextStyle(fontWeight: FontWeight.w800, color: renk, fontSize: 15))),
+              Text('${p.adet} benzer ilan', style: const TextStyle(color: Renk.soluk, fontSize: 12)),
+            ],
           ),
+          const SizedBox(height: 12),
+          Semantics(
+            label: 'Benzer ilanlar ${sayi(p.enDusuk)} ile ${sayi(p.enYuksek)} lira kilogram arasında, ortanca ${sayi(p.medyan)}. Bu ilan ${sayi(i.kgFiyat)}.',
+            child: SizedBox(
+              height: 26,
+              child: LayoutBuilder(
+                builder: (context, k) {
+                  final w = k.maxWidth;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(left: 0, right: 0, top: 10, child: Container(height: 6, decoration: BoxDecoration(color: Renk.zemin2, borderRadius: BorderRadius.circular(3)))),
+                      Positioned(
+                        left: w * konum(p.enDusuk),
+                        width: (w * (konum(p.enYuksek) - konum(p.enDusuk))).clamp(6.0, w).toDouble(),
+                        top: 10,
+                        child: Container(height: 6, decoration: BoxDecoration(color: const Color(0xFFC9D8BE), borderRadius: BorderRadius.circular(3))),
+                      ),
+                      Positioned(left: w * konum(p.medyan) - 1, top: 4, child: Container(width: 2, height: 18, color: Renk.soluk)),
+                      Positioned(
+                        left: w * konum(i.kgFiyat) - 11,
+                        top: 2,
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(color: renk, shape: BoxShape.circle, border: Border.all(color: Renk.kart, width: 3)),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          DefaultTextStyle.merge(
+            style: const TextStyle(color: Renk.soluk, fontSize: 12, fontFeatures: [FontFeature.tabularFigures()]),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [Text('${sayi(p.enDusuk)} ₺/kg'), Text('Ortanca ${sayi(p.medyan)}'), Text('${sayi(p.enYuksek)} ₺/kg')],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text('Bu ilan ${sayi(i.kgFiyat)} ₺/kg.', style: const TextStyle(color: Renk.soluk, fontSize: 13)),
         ],
       ),
     );
@@ -182,7 +225,7 @@ class _DetailScreenState extends State<DetailScreen> {
       margin: const EdgeInsets.only(top: 14),
       padding: const EdgeInsets.all(12),
       width: double.infinity,
-      decoration: BoxDecoration(color: const Color(0xFFF1EBD6), borderRadius: BorderRadius.circular(12)),
+      decoration: kutu(18),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -199,12 +242,21 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Widget _guvenUyarisi() => Container(
         margin: const EdgeInsets.only(top: 14),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         width: double.infinity,
-        decoration: BoxDecoration(color: const Color(0xFFFFF3D6), borderRadius: BorderRadius.circular(12), border: Border.all(color: altin)),
-        child: const Text(
-          '⚠  Güvenli alışveriş: Hayvanı yerinde görmeden kapora veya ön ödeme gönderme. Parayı ancak hayvanı teslim alırken öde. Şüpheli ilanı bildir.',
-          style: TextStyle(fontSize: 13, height: 1.45),
+        decoration: BoxDecoration(color: Renk.zemin2, borderRadius: BorderRadius.circular(16)),
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.shield_outlined, size: 20, color: Renk.murekkep),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Hayvanı yerinde görmeden kapora veya ön ödeme gönderme. Parayı hayvanı teslim alırken öde. Şüpheli ilanı bildir.',
+                style: TextStyle(fontSize: 13, height: 1.45),
+              ),
+            ),
+          ],
         ),
       );
 
@@ -229,7 +281,7 @@ class _DetailScreenState extends State<DetailScreen> {
       margin: const EdgeInsets.only(top: 14),
       padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
       width: double.infinity,
-      decoration: BoxDecoration(color: az ? const Color(0xFFFFF3D6) : const Color(0xFFF1EBD6), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: az ? const Color(0xFFF6E1D9) : Renk.zemin2, borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
           Expanded(child: Text(k <= 0 ? 'İlanın süresi doluyor' : 'İlan $k gün sonra yayından kalkar', style: TextStyle(fontWeight: FontWeight.w700, color: az ? Renk.kiremit : Renk.murekkep))),
@@ -251,18 +303,48 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  Widget _kutu(String ad, String deger) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+  Widget _bilgi(String ad, String deger) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Renk.ayrac))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(ad, style: const TextStyle(color: Renk.soluk, fontSize: 13)),
+            Text(ad, style: const TextStyle(color: Renk.soluk, fontSize: 12)),
             const SizedBox(height: 2),
-            Text(deger, style: const TextStyle(fontWeight: FontWeight.w800)),
+            Text(deger, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
           ],
         ),
       );
+
+  Widget _bilgiler(Ilan i) {
+    final l = [
+      _bilgi('Tür', i.turAd),
+      _bilgi('Cinsiyet', i.cinsiyetAd),
+      _bilgi(i.suru ? 'Yaş aralığı' : 'Yaş', i.yasMetni),
+      _bilgi(i.suru ? 'Ortalama ağırlık' : 'Canlı ağırlık', '${sayi(i.agirlik)} kg'),
+      _bilgi('Adet', '${i.adet} baş'),
+      _bilgi('Kg fiyatı', '${sayi(i.kgFiyat)} ₺'),
+      if (i.amacAd != null) _bilgi('Satış amacı', i.amacAd!),
+      _bilgi('Teslimat', i.teslimatAd),
+      if (i.suru) _bilgi('Satış şekli', i.satisSekli == 'adet_adet' ? 'Adet adet de satılır' : 'Toplu satılır'),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        Text('Bilgiler', style: baslik(20)),
+        for (var k = 0; k < l.length; k += 2)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: l[k]),
+              const SizedBox(width: 20),
+              Expanded(child: k + 1 < l.length ? l[k + 1] : const SizedBox.shrink()),
+            ],
+          ),
+      ],
+    );
+  }
 
   Widget _puanOzeti(Ilan i) {
     final sayilar = List<int>.filled(5, 0);
@@ -273,8 +355,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final toplam = _yorumlar.isEmpty ? 1 : _yorumlar.length;
     return Container(
       margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+      padding: const EdgeInsets.all(14),
+      decoration: kutu(18),
       child: Row(
         children: [
           Column(
@@ -301,7 +383,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             child: LinearProgressIndicator(
                               value: sayilar[k - 1] / toplam,
                               minHeight: 8,
-                              backgroundColor: Renk.cizgi,
+                              backgroundColor: Renk.zemin2,
                               color: Renk.yesil,
                             ),
                           ),
@@ -335,43 +417,51 @@ class _DetailScreenState extends State<DetailScreen> {
                   children: [
                     FotoGaleri(fotolar: fotolar),
                     Positioned(
-                      left: 8,
-                      top: MediaQuery.of(context).padding.top + 8,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: IconButton(icon: const Icon(Icons.arrow_back, color: Renk.yesil), onPressed: () => Navigator.of(context).pop()),
-                      ),
+                      left: 12,
+                      top: MediaQuery.of(context).padding.top + 10,
+                      child: YuzenDugme(ikon: Icons.arrow_back_ios_new_rounded, ipucu: 'Geri', renk: Renk.murekkep, onPressed: () => Navigator.of(context).pop()),
                     ),
                     if (!_benim)
                       Positioned(
-                        right: 8,
-                        top: MediaQuery.of(context).padding.top + 8,
-                        child: CircleAvatar(
-                          backgroundColor: Colors.white,
-                          child: IconButton(
-                            onPressed: _favori,
-                            icon: Icon(app.favoriler.contains(i.id) ? Icons.favorite : Icons.favorite_border, color: Renk.kiremit),
+                        right: 12,
+                        top: MediaQuery.of(context).padding.top + 10,
+                        child: YuzenDugme(
+                          ikon: app.favoriler.contains(i.id) ? Icons.favorite : Icons.favorite_border,
+                          ipucu: app.favoriler.contains(i.id) ? 'Favorilerden çıkar' : 'Favorilere ekle',
+                          renk: Renk.kiremit,
+                          onPressed: _favori,
+                        ),
+                      ),
+                    if (i.videoVar)
+                      Positioned(
+                        left: 12,
+                        bottom: 12,
+                        child: Semantics(
+                          button: true,
+                          label: 'Hayvanın videosunu izle',
+                          excludeSemantics: true,
+                          child: Basma(
+                            child: Material(
+                              color: const Color(0xA81C180F),
+                              shape: const StadiumBorder(),
+                              child: InkWell(
+                                customBorder: const StadiumBorder(),
+                                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => VideoEkrani(url: videoUrl(i.videoYol!)))),
+                                child: const Padding(
+                                  padding: EdgeInsets.fromLTRB(10, 9, 14, 9),
+                                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                    Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+                                    SizedBox(width: 4),
+                                    Text('Videoyu izle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                                  ]),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                   ],
                 ),
-                if (i.videoVar)
-                  InkWell(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => VideoEkrani(url: videoUrl(i.videoYol!)))),
-                    child: Container(
-                      color: Renk.murekkep,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.play_circle_fill, color: altin, size: 30),
-                          SizedBox(width: 10),
-                          Expanded(child: Text('Hayvanın videosunu izle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
-                          Icon(Icons.chevron_right, color: Colors.white),
-                        ],
-                      ),
-                    ),
-                  ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
                   child: Column(
@@ -385,64 +475,61 @@ class _DetailScreenState extends State<DetailScreen> {
                           child: Text(i.durum == 'satildi' ? 'Bu hayvan satıldı' : 'Bu ilan yayında değil', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                         ),
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: Text(i.cins, style: baslik(25))),
-                          const SizedBox(width: 8),
-                          Text(tl(i.toplam), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: Renk.kiremit)),
+                          const Icon(Icons.place_outlined, size: 16, color: Renk.soluk),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text('${i.yer} · ${goreli(i.olusturma)}', style: const TextStyle(color: Renk.soluk, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 2),
-                      Text('${i.suru ? '${i.adet} baş · ' : ''}${i.yer}', style: const TextStyle(color: Renk.soluk)),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 6),
+                      Text(i.suru ? '${i.cins} · ${i.adet} baş' : i.cins, style: baslik(28)),
+                      const SizedBox(height: 4),
                       Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.end,
+                        spacing: 10,
                         children: [
-                          if (i.amacAd != null) _rozet(i.amacAd!, vurgu: true),
-                          for (final b in i.belgeler) _rozet('✓ ${belgeEtiket[b] ?? b}'),
-                          if (i.pazarlik) _rozet('Pazarlık payı var'),
-                          _rozet(i.teslimatAd),
+                          Text(tl(i.toplam), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 26, color: Renk.murekkep, fontFeatures: [FontFeature.tabularFigures()])),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text('${sayi(i.kgFiyat)} ₺/kg${i.pazarlik ? ' · pazarlığa açık' : ''}', style: const TextStyle(color: Renk.soluk, fontSize: 14)),
+                          ),
                         ],
                       ),
+                      if (i.belgeler.isNotEmpty || i.amacAd != null) ...[
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final b in i.belgeler)
+                              b == 'kupe' ? const Rozet('Küpeli', tur: RozetTuru.kupe) : Rozet(belgeEtiket[b] ?? b, tur: RozetTuru.ok),
+                            if (i.amacAd != null) Rozet(i.amacAd!),
+                          ],
+                        ),
+                      ],
                       if (i.aktif && !_benim) _piyasaKutusu(i),
                       if (_benim && i.aktif) _istatistik(),
                       if (_benim && i.aktif) _sureKutusu(i),
-                      const SizedBox(height: 12),
-                      GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8,
-                        childAspectRatio: 2.6,
-                        children: [
-                          _kutu('Tür', i.turAd),
-                          _kutu('Cinsiyet', i.cinsiyetAd),
-                          _kutu('Adet', '${i.adet} baş'),
-                          _kutu(i.suru ? 'Yaş aralığı' : 'Yaş', i.yasMetni),
-                          _kutu(i.suru ? 'Ortalama ağırlık' : 'Canlı ağırlık', '${sayi(i.agirlik)} kg'),
-                          _kutu('Kg fiyatı', '${sayi(i.kgFiyat)} ₺'),
-                          if (i.suru) _kutu('Satış şekli', i.satisSekli == 'adet_adet' ? 'Adet adet de satılır' : 'Toplu satılır'),
-                        ],
-                      ),
+                      _bilgiler(i),
                       if (i.aciklama != null && i.aciklama!.isNotEmpty) ...[
                         const SizedBox(height: 14),
                         Text(i.aciklama!, style: const TextStyle(height: 1.5)),
                       ],
                       if (!_benim && i.aktif) AliciRehberi(ilan: i, aliciIl: app.profil?['il'] as String?),
                       if (!_benim && i.aktif) _guvenUyarisi(),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 22),
                       InkWell(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SaticiScreen(saticiId: i.saticiId, ad: i.saticiAd))),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
                             children: [
                               CircleAvatar(
-                                radius: 24,
-                                backgroundColor: Renk.cizgi,
+                                radius: 26,
+                                backgroundColor: Renk.okZemin,
                                 child: Text(i.saticiAd.isEmpty ? '?' : i.saticiAd.substring(0, 1).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w800, color: Renk.yesil)),
                               ),
                               const SizedBox(width: 10),
@@ -451,7 +538,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(_benim ? 'Siz' : i.saticiAd, style: const TextStyle(fontWeight: FontWeight.w800)),
-                                    const Text('✓ Telefonu doğrulanmış', style: TextStyle(color: Renk.yesil, fontSize: 13, fontWeight: FontWeight.w700)),
+                                    const Row(mainAxisSize: MainAxisSize.min, children: [
+                                      Icon(Icons.verified_outlined, size: 15, color: Renk.okYazi),
+                                      SizedBox(width: 4),
+                                      Flexible(child: Text('Telefonu doğrulanmış', style: TextStyle(color: Renk.okYazi, fontSize: 13, fontWeight: FontWeight.w700))),
+                                    ]),
                                     if (_guven != null)
                                       Text(
                                         _guven!.yeni
@@ -462,7 +553,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   ],
                                 ),
                               ),
-                              const Text('Profili gör', style: TextStyle(color: Renk.yesil, fontWeight: FontWeight.w800, fontSize: 13)),
+                              const Text('Profil', style: TextStyle(color: Renk.yesil, fontWeight: FontWeight.w800, fontSize: 14)),
                               const Icon(Icons.chevron_right, color: Renk.yesil),
                             ],
                           ),
@@ -478,10 +569,10 @@ class _DetailScreenState extends State<DetailScreen> {
                       else
                         for (final y in _yorumlar)
                           Container(
-                            margin: const EdgeInsets.only(top: 8),
-                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(top: 10),
+                            padding: const EdgeInsets.all(14),
                             width: double.infinity,
-                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+                            decoration: kutu(16, Golge.hafif),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -504,7 +595,7 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
           ),
           Container(
-            decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Renk.cizgi))),
+            decoration: BoxDecoration(color: Renk.kart.withValues(alpha: 0.97), border: const Border(top: BorderSide(color: Renk.ayrac))),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: SafeArea(
               top: false,
@@ -512,7 +603,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   ? Row(
                       children: [
                         if (i.aktif) ...[
-                          Expanded(child: OutlinedButton(style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)), onPressed: () => _durum('pasif', 'İlan yayından kaldırıldı'), child: const Text('Yayından kaldır'))),
+                          Expanded(child: OutlinedButton(onPressed: () => _durum('pasif', 'İlan yayından kaldırıldı'), child: const Text('Yayından kaldır'))),
                           const SizedBox(width: 10),
                           Expanded(child: FilledButton(onPressed: () => _durum('satildi', 'İlan satıldı olarak işaretlendi'), child: const Text('Satıldı'))),
                         ] else
@@ -521,12 +612,22 @@ class _DetailScreenState extends State<DetailScreen> {
                     )
                   : Row(
                       children: [
-                        Expanded(child: OutlinedButton(style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52), side: const BorderSide(color: Renk.yesil)), onPressed: i.aktif ? _mesaj : null, child: const Text('Mesaj gönder'))),
+                        Expanded(
+                          child: Basma(
+                            child: OutlinedButton.icon(
+                              onPressed: i.aktif ? _mesaj : null,
+                              icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                              label: const Text('Mesaj gönder'),
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: FilledButton(
-                            onPressed: i.aktif ? _teklif : null,
-                            child: const Text('Teklif ver'),
+                          child: Basma(
+                            child: FilledButton(
+                              onPressed: i.aktif ? _teklif : null,
+                              child: const Text('Teklif ver'),
+                            ),
                           ),
                         ),
                       ],

@@ -228,7 +228,7 @@ class _SellScreenState extends State<SellScreen> {
                   _etiket('Hayvan adedi'),
                   Container(
                     height: 56,
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+                    decoration: kutu(14.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -374,7 +374,7 @@ class _SellScreenState extends State<SellScreen> {
           else
             Container(
               padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Renk.cizgi)),
+              decoration: kutu(14.0),
               child: Row(
                 children: [
                   const Icon(Icons.videocam, color: Renk.yesil),
