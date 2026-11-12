@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../data.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import '../yonetim.dart';
+import 'admin_moderasyon.dart';
 
 /// Yönetici paneli: kullanım, üye, ilan ve etkileşim sayıları.
 /// Sadece `admins` tablosundaki hesaplar görür (008_yonetici.sql); diğerleri için RPC hata verir.
@@ -20,7 +21,7 @@ class YoneticiScreen extends StatefulWidget {
 class _YoneticiScreenState extends State<YoneticiScreen> {
   late Future<YoneticiOzet> _f = _getir();
 
-  Future<YoneticiOzet> _getir() => (widget.yukle ?? yoneticiOzet)();
+  Future<YoneticiOzet> _getir() => (widget.yukle ?? yonetim.ozet)();
 
   Future<void> _yenile() async {
     final f = _getir();
@@ -43,40 +44,30 @@ class _YoneticiScreenState extends State<YoneticiScreen> {
             final yetki = '${s.error}'.contains('yetki');
             return HataKutusu(yetki ? 'Bu sayfa sadece yöneticilere açık.' : '${s.error}\n(008_yonetici.sql çalıştırıldı mı?)', tekrar: _yenile);
           }
-          return RefreshIndicator(color: Renk.yesil, onRefresh: _yenile, child: YoneticiGovde(s.data!));
+          return RefreshIndicator(color: Renk.yesil, onRefresh: _yenile, child: YoneticiGovde(s.data!, yenile: _yenile));
         },
       ),
     );
   }
 }
 
-/// Örnek veri: widget testleri ve yerel önizleme (localhost/?onizleme=yonetici) için. Gerçek veri değildir.
-final onizlemeOzeti = <String, dynamic>{
-  'kullanim': {'toplam_cihaz': 1250, 'bugun': 140, 'son7': 610, 'son30': 1100, 'misafir_bugun': 52, 'platform': {'web': 700, 'ios': 250, 'android': 150}},
-  'uyeler': {'toplam': 412, 'bugun': 9, 'son7': 61, 'son30': 230, 'kayitli_ama_profilsiz': 14, 'rol': {'yetistirici': 210, 'tuccar': 48, 'alici': 154}},
-  'ilanlar': {
-    'aktif': 87, 'toplam': 140, 'bugun': 4, 'son7': 31, 'satildi': 29, 'pasif': 6, 'suresi_doldu': 18, 'videolu': 12, 'goruntulenme': 15873,
-    'ilan_veren': 73, 'ornek_aktif': 17, 'tur': {'kucukbas': 60, 'buyukbas': 22, 'at': 3, 'kanatli': 2},
-    'il': [{'il': 'Manisa', 'n': 41}, {'il': 'Afyonkarahisar', 'n': 12}, {'il': 'İzmir', 'n': 9}],
-  },
-  'etkilesim': {'aktif_talep': 23, 'sohbet': 310, 'mesaj': 2480, 'mesaj_son7': 640, 'favori': 905, 'degerlendirme': 44, 'bekleyen_sikayet': 3},
-  'gunluk': [for (var i = 0; i < 14; i++) {'gun': '2026-11-${(i + 1).toString().padLeft(2, '0')}', 'cihaz': 40 + i * 7 + (i == 13 ? 9 : 0), 'uye': i % 4, 'ilan': i % 3}],
-  'olusturma': '2026-11-12T20:15:00+03:00',
-};
-
 const _rolEtiket = {'yetistirici': 'Yetiştirici', 'tuccar': 'Tüccar', 'alici': 'Alıcı'};
 const _platformEtiket = {'web': 'Web', 'ios': 'iPhone', 'android': 'Android', 'diger': 'Diğer'};
 
 class YoneticiGovde extends StatelessWidget {
-  const YoneticiGovde(this.o, {super.key});
+  const YoneticiGovde(this.o, {super.key, this.yenile});
   final YoneticiOzet o;
+  final VoidCallback? yenile;
 
   @override
   Widget build(BuildContext context) {
     final saat = o.olusturma;
     final platform = o.dagilim('kullanim', 'platform').entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final sikayet = o.n('etkilesim', 'bekleyen_sikayet');
     final ornek = o.n('ilanlar', 'ornek_aktif');
+    Future<void> git(Widget w) async {
+      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => w));
+      yenile?.call();
+    }
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 32),
@@ -88,22 +79,7 @@ class YoneticiGovde extends StatelessWidget {
             style: const TextStyle(color: Renk.soluk, fontSize: 13),
           ),
         ),
-        if (sikayet > 0)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: const Color(0xFFF7E3DC), borderRadius: BorderRadius.circular(14)),
-              child: Row(children: [
-                const Icon(Icons.flag_outlined, color: Renk.kiremit),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text('$sikayet şikâyet inceleme bekliyor',
-                      style: const TextStyle(color: Renk.kiremit, fontWeight: FontWeight.w800)),
-                ),
-              ]),
-            ),
-          ),
+        _ModerasyonBolumu(o, git: git, yenile: yenile),
         const _Baslik('Kullanım'),
         _Izgara([
           _Sayi('Uygulamayı kullanan', o.n('kullanim', 'toplam_cihaz'), alt: 'cihaz · misafirler dahil', ikon: Icons.phone_iphone_rounded, vurgu: true),
@@ -145,7 +121,6 @@ class YoneticiGovde extends StatelessWidget {
           _Sayi('Mesaj', o.n('etkilesim', 'mesaj'), alt: '${sayi(o.n('etkilesim', 'mesaj_son7'))} son 7 günde', ikon: Icons.chat_bubble_outline_rounded),
           _Sayi('Favori', o.n('etkilesim', 'favori'), ikon: Icons.favorite_border_rounded),
           _Sayi('Değerlendirme', o.n('etkilesim', 'degerlendirme'), ikon: Icons.star_border_rounded),
-          _Sayi('Bekleyen şikâyet', sikayet, ikon: Icons.flag_outlined, uyari: sikayet > 0),
         ]),
       ],
     );
@@ -185,7 +160,8 @@ class _Izgara extends StatelessWidget {
 }
 
 class _Sayi extends StatelessWidget {
-  const _Sayi(this.etiket, this.deger, {this.alt, required this.ikon, this.vurgu = false, this.uyari = false});
+  const _Sayi(this.etiket, this.deger, {this.alt, required this.ikon, this.vurgu = false, this.uyari = false, this.onTap});
+  final VoidCallback? onTap;
   final String etiket;
   final int deger;
   final String? alt;
@@ -197,9 +173,11 @@ class _Sayi extends StatelessWidget {
   Widget build(BuildContext context) {
     final renk = uyari ? Renk.kiremit : (vurgu ? Renk.krem : Renk.murekkep);
     final ikinci = vurgu ? Renk.krem.withValues(alpha: .8) : Renk.soluk;
-    return Semantics(
+    final kart = Semantics(
+      button: onTap != null,
       label: '$etiket: ${sayi(deger)}${alt == null ? '' : ', $alt'}',
       excludeSemantics: true,
+      onTap: onTap,
       child: Container(
         constraints: const BoxConstraints(minHeight: 108),
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -215,6 +193,7 @@ class _Sayi extends StatelessWidget {
               Expanded(
                 child: Text(etiket, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: ikinci, fontWeight: FontWeight.w800, fontSize: 13)),
               ),
+              if (onTap != null) Icon(Icons.chevron_right_rounded, size: 20, color: ikinci),
             ]),
             const SizedBox(height: 6),
             FittedBox(
@@ -227,7 +206,104 @@ class _Sayi extends StatelessWidget {
         ),
       ),
     );
+    if (onTap == null) return kart;
+    return Basma(child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: kart));
   }
+}
+
+/// Moderasyon kısayolları + ön onay anahtarı (009_moderasyon.sql).
+class _ModerasyonBolumu extends StatelessWidget {
+  const _ModerasyonBolumu(this.o, {required this.git, this.yenile});
+  final YoneticiOzet o;
+  final Future<void> Function(Widget) git;
+  final VoidCallback? yenile;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = o.moderasyon;
+    if (m == null) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
+        child: Text('Moderasyon araçları için Supabase\'de 009_moderasyon.sql çalıştırılmalı.', style: TextStyle(color: Renk.kiremit, fontWeight: FontWeight.w800)),
+      );
+    }
+    int n(String k) => ((m[k] as num?) ?? 0).toInt();
+    final onOnay = m['on_onay'] == true;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const _Baslik('Moderasyon'),
+      _Izgara([
+        _Sayi('Bekleyen şikâyet', n('sikayet_yeni'),
+            alt: '${sayi(n('sikayet_inceleniyor'))} inceleniyor', ikon: Icons.flag_outlined, uyari: n('sikayet_yeni') > 0, onTap: () => git(const SikayetlerScreen())),
+        _Sayi('Onay bekleyen', n('onay_bekleyen'),
+            alt: onOnay ? 'ön onay açık' : 'ön onay kapalı',
+            ikon: Icons.pending_actions_outlined,
+            uyari: n('onay_bekleyen') > 0,
+            onTap: () => git(const YoneticiIlanlarScreen(filtre: 'onay', baslikYazi: 'Onay bekleyenler'))),
+        _Sayi('Otomatik gizlenen', n('otomatik_gizlenen'),
+            alt: '3 şikâyetle kalktı',
+            ikon: Icons.visibility_off_outlined,
+            uyari: n('otomatik_gizlenen') > 0,
+            onTap: () => git(const YoneticiIlanlarScreen(
+                filtre: 'otomatik', baslikYazi: 'Otomatik gizlenenler', aciklama: 'Şikâyet haklıysa kaldır, haksızsa yeniden yayına al.'))),
+        _Sayi('Şüpheli ilan', n('supheli'),
+            alt: 'IBAN, telefon, kapora, ucuz fiyat',
+            ikon: Icons.warning_amber_rounded,
+            uyari: n('supheli') > 0,
+            onTap: () => git(const YoneticiIlanlarScreen(
+                filtre: 'supheli', baslikYazi: 'Şüpheli ilanlar', aciklama: 'Açıklamada IBAN, telefon veya kapora geçen ya da piyasanın yarısından ucuz ilanlar. Fotoğraftaki yazılar taranmaz.'))),
+      ]),
+      Bolum('', [
+        Satir('Kullanıcılar', ikon: Icons.manage_accounts_outlined, deger: n('askida_kullanici') > 0 ? '${n('askida_kullanici')} askıda' : null,
+            onTap: () => git(const KullanicilarScreen())),
+        Satir('İlanlarda ara', ikon: Icons.search_rounded, onTap: () => git(const YoneticiIlanlarScreen(filtre: 'tumu', baslikYazi: 'İlanlarda ara'))),
+        Satir('Gizlenen ve kaldırılan ilanlar', ikon: Icons.inventory_2_outlined,
+            onTap: () => git(const YoneticiIlanlarScreen(filtre: 'gizli', baslikYazi: 'Gizlenen ve kaldırılanlar'))),
+        _OnOnay(onOnay, yenile: yenile),
+      ]),
+    ]);
+  }
+}
+
+class _OnOnay extends StatefulWidget {
+  const _OnOnay(this.acik, {this.yenile});
+  final bool acik;
+  final VoidCallback? yenile;
+  @override
+  State<_OnOnay> createState() => _OnOnayState();
+}
+
+class _OnOnayState extends State<_OnOnay> {
+  late bool _acik = widget.acik;
+  bool _mesgul = false;
+
+  Future<void> _degistir(bool v) async {
+    if (_mesgul) return;
+    if (v) {
+      final ok = await onayIste(context, 'Ön onay açılsın mı?',
+          'Bundan sonra verilen her ilan, sen onaylayana kadar yayına çıkmaz. Satıcıya "onay bekliyor" yazar.', 'Ön onayı aç');
+      if (!ok || !mounted) return;
+    }
+    setState(() {
+      _acik = v;
+      _mesgul = true;
+    });
+    try {
+      await yonetim.ayar('on_onay', v);
+      if (mounted) bildir(context, v ? 'Ön onay açık: yeni ilanlar onayını bekleyecek' : 'Ön onay kapalı: ilanlar hemen yayına çıkar');
+      widget.yenile?.call();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _acik = !v);
+        bildir(context, 'Ayar değiştirilemedi: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _mesgul = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      AnahtarSatir('Ön onay modu', _acik, _degistir, alt: 'Yeni ilanlar yönetici onayından sonra yayına çıkar');
 }
 
 class _Kart extends StatelessWidget {

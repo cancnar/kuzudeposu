@@ -129,7 +129,23 @@ async function geri(p) {
   await y.goto('http://localhost:8080/kuzudeposu/?onizleme=yonetici', { timeout: 60000 });
   await y.waitForTimeout(8000);
   await snap(y, 'yonetici_1');
-  for (let k = 2; k <= 5; k++) { await kaydir(y, 700); await snap(y, 'yonetici_' + k); }
+  for (let k = 2; k <= 6; k++) { await kaydir(y, 700); await snap(y, 'yonetici_' + k); }
+  const onizle = async () => { await y.goto('http://localhost:8080/kuzudeposu/?onizleme=yonetici', { timeout: 60000 }); await y.waitForTimeout(7000); };
+  await onizle();
+  await tikla(y, 'Bekleyen şikâyet', 2500); await snap(y, 'mod_sikayetler');
+  await kaydir(y, 700); await snap(y, 'mod_sikayetler_2');
+  await onizle();
+  await tikla(y, 'Şüpheli ilan', 2500); await snap(y, 'mod_supheli');
+  await tikla(y, 'Holstein', 2000); await snap(y, 'mod_ilan_islem');
+  await tikla(y, 'Yayından gizle', 2000); await snap(y, 'mod_neden');
+  await tikla(y, 'Kapora / ön ödeme istiyor', 600);
+  await tikla(y, 'Yayından gizle', 2500); await snap(y, 'mod_gizlendi');
+  await onizle();
+  await tikla(y, 'Onay bekleyen', 2500); await snap(y, 'mod_onay');
+  await onizle();
+  await tikla(y, 'Kullanıcılar', 2500); await snap(y, 'mod_kullanicilar');
+  await tikla(y, 'Sabri Kaya', 2500); await snap(y, 'mod_kullanici');
+  await kaydir(y, 700); await snap(y, 'mod_kullanici_2');
   log.push('SON ' + urlSonrasi.replace(/\n/g, ' '));
   fs.writeFileSync(`${out}/log.txt`, log.join('\n'));
   await b.close();

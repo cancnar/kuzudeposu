@@ -80,6 +80,31 @@ String maske(String? telefon) {
   return '+90 ${t.substring(0, 3)} *** ** ${t.substring(8)}';
 }
 
+const moderasyonEtiket = {
+  'onay_bekliyor': 'Onay bekliyor',
+  'otomatik_gizlendi': 'İncelemede',
+  'yonetici_gizledi': 'Yönetici gizledi',
+  'yonetici_kaldirdi': 'Kaldırıldı',
+  'hesap_askida': 'Hesap askıda',
+};
+
+/// Satıcıya gösterilen açıklama (ilan detayında).
+const moderasyonAciklama = {
+  'onay_bekliyor': 'İlanın yönetici onayı bekliyor. Onaylanınca yayına çıkar ve sana bildirim gelir.',
+  'otomatik_gizlendi': 'İlanın birden fazla şikâyet aldığı için incelemeye alındı. İnceleme bitince sana bildirim gelir.',
+  'yonetici_gizledi': 'İlanın yönetici tarafından yayından kaldırıldı.',
+  'yonetici_kaldirdi': 'İlanın kurallara uymadığı için kaldırıldı.',
+  'hesap_askida': 'Hesabın askıya alındığı için ilanın yayında değil.',
+};
+
+/// 905321234567 → +90 532 123 45 67 (yönetici paneli için tam numara)
+String telefonYaz(String? telefon) {
+  var t = (telefon ?? '').replaceAll(RegExp(r'\D'), '');
+  if (t.startsWith('90') && t.length == 12) t = t.substring(2);
+  if (t.length != 10) return telefon ?? '';
+  return '+90 ${t.substring(0, 3)} ${t.substring(3, 6)} ${t.substring(6, 8)} ${t.substring(8)}';
+}
+
 class Ilan {
   Ilan({
     required this.id,
@@ -107,6 +132,8 @@ class Ilan {
     this.pazarlik = false,
     this.teslimat = 'yerinde',
     this.goruntulenme = 0,
+    this.moderasyon,
+    this.moderasyonNeden,
     this.saticiAd = 'Satıcı',
     this.saticiPuan = 0,
     this.saticiPuanSayisi = 0,
@@ -114,6 +141,9 @@ class Ilan {
 
   final String id, saticiId, tur, cins, cinsiyet, satisSekli, il, ilce, durum;
   final String? aciklama, amac, videoYol;
+
+  /// Yönetici incelemesi (009): onay_bekliyor, otomatik_gizlendi, yonetici_gizledi, yonetici_kaldirdi, hesap_askida
+  final String? moderasyon, moderasyonNeden;
   final List<String> belgeler;
   final bool pazarlik;
   final String teslimat;
@@ -139,6 +169,16 @@ class Ilan {
   int? get kalanGun => bitis == null ? null : bitis!.difference(DateTime.now()).inDays;
   String? get amacAd => amac == null ? null : amacEtiket[amac];
   String get teslimatAd => teslimatEtiket[teslimat] ?? teslimat;
+  String? get moderasyonAd => moderasyon == null ? null : (moderasyonEtiket[moderasyon] ?? 'İncelemede');
+
+  /// Listede gösterilecek kısa durum yazısı.
+  String get durumAd => moderasyonAd ??
+      switch (durum) {
+        'aktif' => 'Yayında',
+        'satildi' => 'Satıldı',
+        'kaldirildi' => 'Kaldırıldı',
+        _ => 'Yayında değil',
+      };
 
   factory Ilan.json(Map<String, dynamic> j, {String? ad, num? puan, int? puanSayisi, double? mesafe}) {
     final s = j['seller'];
@@ -176,6 +216,8 @@ class Ilan {
       pazarlik: j['pazarlik'] as bool? ?? false,
       teslimat: j['teslimat'] as String? ?? 'yerinde',
       goruntulenme: (j['goruntulenme'] as num?)?.toInt() ?? 0,
+      moderasyon: j['moderasyon'] as String?,
+      moderasyonNeden: j['moderasyon_neden'] as String?,
       saticiAd: sAd ?? 'Satıcı',
       saticiPuan: (sPuan ?? 0).toDouble(),
       saticiPuanSayisi: sSayi ?? 0,
@@ -429,4 +471,7 @@ class YoneticiOzet {
       ];
 
   DateTime? get olusturma => DateTime.tryParse('${ham['olusturma']}')?.toLocal();
+
+  /// 009 moderasyon sayıları (yoksa null).
+  Map<String, dynamic>? get moderasyon => (ham['moderasyon'] as Map?)?.cast<String, dynamic>();
 }

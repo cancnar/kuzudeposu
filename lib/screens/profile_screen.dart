@@ -82,6 +82,24 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
+        if (p['askida'] == true)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: const Color(0xFFF7E3DC), borderRadius: BorderRadius.circular(14)),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(Icons.block_rounded, color: Renk.kiremit),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Hesabın askıya alındı. İlan veremez, mesaj gönderemezsin.${p['askida_neden'] == null ? '' : '\nSebep: ${p['askida_neden']}'}',
+                    style: const TextStyle(color: Renk.kiremit, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ]),
+            ),
+          ),
         Bolum('', [
           Satir('İlanlarım', ikon: Icons.list_alt_rounded, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MineScreen()))),
           Satir('Favorilerim', ikon: Icons.favorite_border, onTap: () {

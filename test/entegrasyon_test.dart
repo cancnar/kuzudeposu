@@ -314,6 +314,35 @@ void main() {
           final tablo = await db.from('admins').select().then((r) => r.length).catchError((_) => -1);
           sart(tablo <= 0, 'admins tablosu uygulamadan okunabiliyor');
         });
+        await adim('moderasyon (009): test hesabı moderasyon yapamaz, korumalı alanları değiştiremez', () async {
+          var var009 = true;
+          var acik = false;
+          try {
+            await db.rpc('yonetici_moderasyon_ozet');
+            acik = true;
+          } on PostgrestException catch (e) {
+            if (e.code == 'PGRST202' || e.message.contains('Could not find')) {
+              var009 = false;
+            } else {
+              sart(e.message.contains('yetki'), 'beklenmeyen hata: ${e.message}');
+            }
+          }
+          if (!var009) {
+            sonuc.add('   bilgi: 009_moderasyon.sql henüz çalıştırılmamış, adım atlandı');
+            return;
+          }
+          sart(!acik, 'yönetici olmayan moderasyon özetini okuyabildi!');
+          final islem = await db.rpc('yonetici_askiya_al', params: {'p_id': uid, 'p_askida': true}).then((_) => true).catchError((_) => false);
+          sart(!islem, 'yönetici olmayan askıya alma yapabildi!');
+          await db.from('profiles').update({'askida': true}).eq('id', uid!);
+          final p = await db.from('profiles').select('askida').eq('id', uid!).single();
+          sart(p['askida'] == false, 'kullanıcı kendi askida alanını değiştirebildi');
+          if (kendiIlan != null) {
+            await db.from('listings').update({'moderasyon': 'onay_bekliyor'}).eq('id', kendiIlan!);
+            final r = await db.from('listings').select('moderasyon').eq('id', kendiIlan!).single();
+            sart(r['moderasyon'] == null, 'kullanıcı ilanın moderasyon alanını değiştirebildi');
+          }
+        });
       }
     } finally {
       await adim('temizlik: fotoğrafları sil', () async {

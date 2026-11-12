@@ -610,7 +610,20 @@ class _DetailScreenState extends State<DetailScreen> {
                           Expanded(child: OutlinedButton(onPressed: () => _durum('pasif', 'İlan yayından kaldırıldı'), child: const Text('Yayından kaldır'))),
                           const SizedBox(width: 10),
                           Expanded(child: FilledButton(onPressed: () => _durum('satildi', 'İlan satıldı olarak işaretlendi'), child: const Text('Satıldı'))),
-                        ] else
+                        ] else if (i.moderasyon != null)
+                          Expanded(
+                            child: Row(children: [
+                              const Icon(Icons.shield_outlined, color: Renk.kiremit),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '${moderasyonAciklama[i.moderasyon] ?? 'İlanın incelemede.'}${i.moderasyonNeden == null || i.moderasyon == 'onay_bekliyor' ? '' : '\nSebep: ${i.moderasyonNeden}'}',
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                                ),
+                              ),
+                            ]),
+                          )
+                        else
                           Expanded(child: FilledButton(onPressed: () => _durum('aktif', 'İlan yeniden yayında'), child: const Text('Yeniden yayınla'))),
                       ],
                     )

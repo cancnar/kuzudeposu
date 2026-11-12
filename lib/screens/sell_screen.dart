@@ -112,7 +112,7 @@ class _SellScreenState extends State<SellScreen> {
       _yukleniyor = true;
     });
     try {
-      await ilanVer({
+      final yeniId = await ilanVer({
         'seller_id': uid,
         'tur': turKod[_tur],
         'cins': _cins,
@@ -131,13 +131,14 @@ class _SellScreenState extends State<SellScreen> {
         'pazarlik': _pazarlik,
         'teslimat': _teslimat,
       }, _fotolar, video: _video);
+      final onayda = await ilanOnayBekliyor(yeniId);
       app.filtre = Filtre();
       app.arama = '';
       app.sekme = 0;
       app.ilanlariYenile();
       if (!mounted) return;
       Navigator.of(context).pop();
-      bildir(context, 'İlanın yayınlandı');
+      bildir(context, onayda ? 'İlanın alındı. Yönetici onayından sonra yayına çıkacak.' : 'İlanın yayınlandı');
     } catch (err) {
       setState(() => _hata = 'İlan yayınlanamadı: $err\n(Fotoğraf yükleme hatasıysa 002, video hatasıysa 007_video.sql çalıştırıldı mı?)');
     } finally {

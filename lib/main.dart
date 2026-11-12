@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
 import 'data.dart';
-import 'models.dart';
 import 'screens/admin_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'screens/shell.dart';
@@ -12,6 +11,7 @@ import 'screens/welcome_screen.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'yonetim.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,5 +74,6 @@ class Kok extends StatelessWidget {
 Widget? _onizleme() {
   if (!kIsWeb || !const {'localhost', '127.0.0.1'}.contains(Uri.base.host)) return null;
   if (Uri.base.queryParameters['onizleme'] != 'yonetici') return null;
-  return YoneticiScreen(yukle: () async => YoneticiOzet(onizlemeOzeti));
+  yonetim = OrnekKaynak();
+  return const YoneticiScreen();
 }

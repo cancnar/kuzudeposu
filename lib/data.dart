@@ -164,6 +164,16 @@ Future<void> ilanUzat(Ilan i) {
   return db.from('listings').update({'expires_at': baz.add(const Duration(days: 30)).toUtc().toIso8601String()}).eq('id', i.id);
 }
 
+/// Ön onay modu açıksa (009) yeni ilan "onay_bekliyor" olarak kaydedilir. 009 yoksa false.
+Future<bool> ilanOnayBekliyor(String id) async {
+  try {
+    final r = await db.from('listings').select('moderasyon').eq('id', id).maybeSingle();
+    return r?['moderasyon'] == 'onay_bekliyor';
+  } catch (_) {
+    return false;
+  }
+}
+
 Future<void> ilanDurumu(String id, String durum) => db.from('listings').update({'durum': durum}).eq('id', id);
 
 // ---- Mesajlaşma ----

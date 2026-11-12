@@ -297,7 +297,7 @@ class IlanKarti extends StatelessWidget {
                             right: 10,
                             bottom: 10,
                             child: _FotoEtiket(
-                              i.durum == 'satildi' ? (i.satildiAt != null ? 'Satıldı · ${goreli(i.satildiAt!)}' : 'Satıldı') : 'Yayında değil',
+                              i.moderasyonAd ?? (i.durum == 'satildi' ? (i.satildiAt != null ? 'Satıldı · ${goreli(i.satildiAt!)}' : 'Satıldı') : 'Yayında değil'),
                               zemin: Renk.murekkep,
                               yaziRenk: Colors.white,
                             ),
