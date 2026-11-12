@@ -107,12 +107,14 @@ void main() {
       await dokun(t, find.text('Devam'));
       expect(find.text('Yaşı ay olarak yaz (1 yaş = 12 ay).'), findsOneWidget);
       expect(find.text('Canlı ağırlığı yaz.'), findsOneWidget);
-      final alanlar = find.byType(TextField);
+      final alanlar = find.byType(TextField, skipOffstage: false);
       await t.enterText(alanlar.at(0), '10');
       await t.enterText(alanlar.at(1), '4');
       await t.enterText(alanlar.at(2), '18000');
       await dokun(t, find.text('Devam'));
       expect(find.textContaining('Kg fiyatı 4.500 ₺ çıkıyor'), findsOneWidget);
+      await t.ensureVisible(alanlar.at(1));
+      await t.pumpAndSettle();
       await t.enterText(alanlar.at(1), '45');
       await dokun(t, find.text('Devam'));
       expect(find.text('Adım 3/4 · Konum ve belgeler'), findsOneWidget);
