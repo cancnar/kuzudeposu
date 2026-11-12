@@ -413,7 +413,7 @@ class _SikayetlerScreenState extends State<SikayetlerScreen> {
           const SizedBox(height: 10),
           Row(children: [
             if (s.durum == 'yeni') ...[
-              Expanded(child: _ikincil('İncelemeye al', () => _durumDegistir(s, 'inceleniyor', 'İncelemeye alındı'), ikon: Icons.hourglass_top_rounded)),
+              Expanded(child: _ikincil('İncele', () => _durumDegistir(s, 'inceleniyor', 'İncelemeye alındı'), ikon: Icons.hourglass_top_rounded)),
               const SizedBox(width: 10),
             ],
             if (s.durum != 'kapandi')
