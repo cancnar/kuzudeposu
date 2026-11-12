@@ -196,7 +196,7 @@ Future<bool> ilanIslemSayfasi(BuildContext context, YIlan y) async {
           ilanGerekceleri,
           dugme: sonuc == 'gizle' ? 'Yayından gizle' : (m == 'onay_bekliyor' ? 'Reddet' : 'Kalıcı olarak kaldır'));
       if (neden == null || !context.mounted) return false;
-      return _yap(context, () => yonetim.ilanIslem(i.id, sonuc, neden), sonuc == 'gizle' ? 'İlan gizlendi, satıcıya bildirildi' : 'İlan kaldırıldı, satıcıya bildirildi');
+      return _yap(context, () => yonetim.ilanIslem(i.id, sonuc, neden: neden), sonuc == 'gizle' ? 'İlan gizlendi, satıcıya bildirildi' : 'İlan kaldırıldı, satıcıya bildirildi');
   }
 }
 
