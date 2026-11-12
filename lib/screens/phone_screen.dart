@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data.dart';
+import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'metinler_screen.dart';
 import 'otp_screen.dart';
 
 /// Giriş gerektiren bir işlemden önce çağrılır. Oturum yoksa giriş ekranını açar.
-Future<bool> girisGerekli(BuildContext context) async {
+/// Giriş yoksa telefon ekranını açar ve false döner. [ilanId] verilirse girişten sonra o ilana geri dönülür.
+Future<bool> girisGerekli(BuildContext context, {String? ilanId}) async {
   if (db.auth.currentSession != null) return true;
+  if (ilanId != null) app.bekleyenIlanId = ilanId;
   bildir(context, 'Devam etmek için telefon numaranla giriş yap.');
   await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PhoneScreen()));
   return false;
@@ -90,6 +95,8 @@ class _PhoneScreenState extends State<PhoneScreen> {
                   TextField(
                     controller: _tel,
                     keyboardType: TextInputType.phone,
+                    autofillHints: const [AutofillHints.telephoneNumberNational],
+                    inputFormatters: [TelefonBicimi()],
                     style: const TextStyle(fontSize: 20),
                     decoration: const InputDecoration(labelText: 'Cep telefonu', prefixText: '+90  ', hintText: '532 123 45 67'),
                   ),
@@ -99,8 +106,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
                     onChanged: (v) => setState(() => _kvkk = v ?? false),
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Kullanım Koşulları\'nı ve Gizlilik (KVKK) Aydınlatma Metni\'ni okudum, kabul ediyorum.',
-                        style: TextStyle(fontSize: 14, height: 1.4)),
+                    title: const SartlarMetni(once: '', sonra: '\'ni okudum, kabul ediyorum.', stil: TextStyle(fontSize: 14, height: 1.4, color: Renk.murekkep)),
                   ),
                   if (_hata != null)
                     Padding(
@@ -121,5 +127,23 @@ class _PhoneScreenState extends State<PhoneScreen> {
         ),
       ),
     );
+  }
+}
+
+/// Yazarken "555 999 99 99" biçiminde gruplar; baştaki 0 ve +90 atılır, en fazla 10 hane.
+class TelefonBicimi extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue eski, TextEditingValue yeni) {
+    var d = yeni.text.replaceAll(RegExp(r'\D'), '');
+    if (d.startsWith('90') && d.length > 10) d = d.substring(2);
+    if (d.startsWith('0')) d = d.substring(1);
+    if (d.length > 10) d = d.substring(0, 10);
+    final b = StringBuffer();
+    for (var i = 0; i < d.length; i++) {
+      if (i == 3 || i == 6 || i == 8) b.write(' ');
+      b.write(d[i]);
+    }
+    final t = b.toString();
+    return TextEditingValue(text: t, selection: TextSelection.collapsed(offset: t.length));
   }
 }

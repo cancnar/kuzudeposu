@@ -43,7 +43,7 @@ begin
     (4,'kucukbas','Merinos','disi',120,12,36,55,2440000,'birlikte','Büyük sürü, aşıları tam, toplu satılık.','Aksaray','Eskil',38.40,33.41,7),
     (5,'kucukbas','Sakız','disi',15,14,20,52,312000,'adet_adet','Süt verimi yüksek, damızlık.','İzmir','Çeşme',38.32,26.30,3),
     (1,'kucukbas','Saanen Keçisi','disi',20,12,24,45,342000,'adet_adet','Süt keçisi sürüsü, ikizlik oranı yüksek.','Manisa','Kula',38.55,28.65,8),
-    (4,'kucukbas','Daglıç','erkek',40,6,8,38,640000,'birlikte','Kuzu sürüsü, kurbanlığa uygun değil, besilik.','Afyonkarahisar','Dinar',38.06,30.16,9),
+    (4,'kucukbas','Dağlıç','erkek',40,6,8,38,640000,'birlikte','Kuzu sürüsü, kurbanlığa uygun değil, besilik.','Afyonkarahisar','Dinar',38.06,30.16,9),
     (1,'kanatli','Hindi','karisik',200,4,5,9,180000,'birlikte','Beyaz hindi, kesime yakın, toplu satış.','Manisa','Turgutlu',38.50,27.70,2),
     (6,'kanatli','Kaz','karisik',30,6,8,6,27000,'adet_adet','Kars kazı, serbest gezen.','Kars','Merkez',40.60,43.10,4),
     (5,'kanatli','Yumurtacı Tavuk','disi',500,18,24,2,54000,'birlikte','Yumurta verimi düşen sürü, toplu.','Denizli','Çardak',37.82,29.67,10),

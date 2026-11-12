@@ -9,6 +9,15 @@ SupabaseClient? testIstemci;
 SupabaseClient get db => testIstemci ?? Supabase.instance.client;
 String? get uid => db.auth.currentUser?.id;
 
+/// Supabase başlatılmamışsa (bileşen testleri) hata vermeden null döner.
+String? get uidVarsa {
+  try {
+    return uid;
+  } catch (_) {
+    return null;
+  }
+}
+
 const _saticiEmbed = 'seller:profiles!seller_id(full_name,rating_avg,rating_count)';
 
 String videoUrl(String yol) => db.storage.from('listing-videos').getPublicUrl(yol);
@@ -227,6 +236,41 @@ Future<String> konusmaAc(Ilan ilan) async {
 
 Future<void> mesajGonder(String konusmaId, String metin) =>
     db.from('messages').insert({'conversation_id': konusmaId, 'sender_id': uid, 'body': metin});
+
+/// Yapılandırılmış teklif (010). Veri tabanı henüz güncellenmediyse düz mesaj olarak gider.
+Future<void> teklifGonder(String konusmaId, double tutar, String metin) async {
+  try {
+    await db.from('messages').insert({'conversation_id': konusmaId, 'sender_id': uid, 'body': metin, 'tur': 'teklif', 'tutar': tutar});
+  } on PostgrestException catch (e) {
+    if (e.code == 'PGRST204' || e.message.contains("'tur'") || e.message.contains('column')) {
+      await mesajGonder(konusmaId, metin);
+    } else {
+      rethrow;
+    }
+  }
+}
+
+Future<void> teklifYanitla(String mesajId, bool kabul) => db.rpc('teklif_yanitla', params: {'p_mesaj': mesajId, 'p_kabul': kabul});
+
+// ---- Profil fotoğrafı ----
+String? avatarUrl(String? yol) => yol == null || yol.isEmpty ? null : '${db.storage.from('avatars').getPublicUrl(yol)}?v=${yol.hashCode}';
+
+Future<void> avatarYukle(FotoDosya f) async {
+  final uz = f.ad.contains('.') ? f.ad.split('.').last.toLowerCase() : 'jpg';
+  final yol = '${uid!}/avatar_${DateTime.now().millisecondsSinceEpoch}.$uz';
+  await db.storage.from('avatars').uploadBinary(yol, f.bytes, fileOptions: FileOptions(contentType: f.tip, upsert: true));
+  await db.from('profiles').update({'avatar_path': yol}).eq('id', uid!);
+}
+
+// ---- Destek (010) ----
+const destekKonulari = {'soru': 'Soru', 'hata': 'Hata bildirimi', 'oneri': 'Öneri', 'sikayet': 'Şikâyet', 'diger': 'Diğer'};
+
+Future<void> destekGonder(String konu, String mesaj, String? iletisim) => db.from('destek_mesajlari').insert({
+      'user_id': uid,
+      'konu': konu,
+      'mesaj': mesaj,
+      'iletisim': (iletisim ?? '').trim().isEmpty ? null : iletisim!.trim(),
+    });
 
 Future<void> okunduIsaretle(String konusmaId) => db
     .from('messages')

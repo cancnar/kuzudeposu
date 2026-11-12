@@ -4,6 +4,7 @@ import '../data.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'detail_screen.dart';
 import 'favorites_screen.dart';
 import 'home_screen.dart';
 import 'messages_screen.dart';
@@ -97,11 +98,28 @@ class Shell extends StatelessWidget {
 
   }
 
+  /// Paylaşılan bağlantıdaki ilanı hemen, girişten sonra dönülecek ilanı ise profil hazır olunca bir kez açar.
+  void _bekleyeniAc(BuildContext context) {
+    String? id = app.paylasilanIlanId;
+    if (id != null) {
+      app.paylasilanIlanId = null;
+    } else if (app.bekleyenIlanId != null && db.auth.currentSession != null && app.profil != null) {
+      id = app.bekleyenIlanId;
+      app.bekleyenIlanId = null;
+    }
+    if (id == null) return;
+    final ac = id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetailScreen(ilanId: ac)));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: app,
       builder: (context, _) {
+        _bekleyeniAc(context);
         final s = app.sekme;
         return Scaffold(
           body: SafeArea(

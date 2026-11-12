@@ -14,6 +14,12 @@ class AppState extends ChangeNotifier {
   String? profilHata;
   bool misafir = false;
   bool yonetici = false;
+
+  /// Girişten (ve profil kurulumundan) sonra açılacak ilan. Shell bunu bir kez açar ve temizler.
+  String? bekleyenIlanId;
+
+  /// Paylaşılan bağlantıyla (?ilan=…) gelen ilan; giriş beklemeden açılır.
+  String? paylasilanIlanId;
   Set<String> favoriler = {};
   int okunmamisBildirim = 0;
   int okunmamisMesaj = 0;

@@ -56,6 +56,79 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _teklifYanit(Mesaj m, bool kabul) async {
+    if (!kabul) {
+      final ok = await onayIste(context, 'Teklif reddedilsin mi?', '${tl(m.tutar!)} teklifini reddettiğini karşı tarafa bildireceğiz.', 'Reddet', tehlike: true);
+      if (!ok) return;
+    }
+    try {
+      await teklifYanitla(m.id, kabul);
+    } catch (e) {
+      if (mounted) bildir(context, 'Yanıt gönderilemedi: $e');
+    }
+  }
+
+  /// Teklif mesajı: tutar, istenen fiyata göre fark, karşı taraf için Kabul/Reddet.
+  Widget _teklifKarti(Mesaj m, bool benim, double? istenen) {
+    final t = m.tutar!;
+    final fark = istenen == null || istenen <= 0 ? null : ((t - istenen) / istenen * 100).round();
+    final durum = switch (m.yanit) { 'kabul' => 'Kabul edildi', 'red' => 'Reddedildi', _ => benim ? 'Yanıt bekleniyor' : null };
+    return Align(
+      alignment: benim ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * .8),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Renk.kart,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: Golge.kart,
+          border: Border.all(color: m.yanit == 'kabul' ? Renk.yesil : altin, width: 1.5),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.local_offer_outlined, size: 18, color: Renk.yesil),
+            const SizedBox(width: 6),
+            Text(benim ? 'Teklifin' : 'Teklif', style: const TextStyle(fontWeight: FontWeight.w800, color: Renk.soluk)),
+          ]),
+          const SizedBox(height: 4),
+          Text(tl(t), style: baslik(26)),
+          if (fark != null)
+            Text(fark == 0 ? 'İstenen fiyatla aynı' : 'İstenen ${tl(istenen!)} · %${fark.abs()} ${fark < 0 ? 'altında' : 'üstünde'}',
+                style: const TextStyle(color: Renk.soluk, fontSize: 13)),
+          if (durum != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: m.yanit == 'kabul' ? Renk.okZemin : (m.yanit == 'red' ? const Color(0xFFF7E3DC) : Renk.zemin2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(durum,
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: m.yanit == 'kabul' ? Renk.okYazi : (m.yanit == 'red' ? Renk.kiremit : Renk.murekkep))),
+            ),
+          ],
+          if (!benim && m.yanit == null) ...[
+            const SizedBox(height: 10),
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Basma(child: FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(110, 44)), onPressed: () => _teklifYanit(m, true), child: const Text('Kabul et'))),
+              const SizedBox(width: 8),
+              Basma(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(96, 44), foregroundColor: Renk.kiremit),
+                  onPressed: () => _teklifYanit(m, false),
+                  child: const Text('Reddet'),
+                ),
+              ),
+            ]),
+          ],
+          const SizedBox(height: 4),
+          Text(saat(m.zaman), style: const TextStyle(fontSize: 11, color: Renk.soluk)),
+        ]),
+      ),
+    );
+  }
+
   void _menu() {
     final k = _k!;
     showModalBottomSheet<void>(
@@ -252,6 +325,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemBuilder: (_, n) {
                     final m = ters[n];
                     final benim = m.gonderen == uid;
+                    if (m.teklif) return _teklifKarti(m, benim, k.ilanFiyat?.toDouble());
                     return Align(
                       alignment: benim ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(

@@ -23,6 +23,31 @@ class _OtpScreenState extends State<OtpScreen> {
   bool _yukleniyor = false;
   int _kalan = 3;
   String? _hata;
+  int _bekle = 60;
+  Timer? _sayac;
+
+  @override
+  void initState() {
+    super.initState();
+    _sayacBaslat();
+  }
+
+  void _sayacBaslat() {
+    _sayac?.cancel();
+    setState(() => _bekle = 60);
+    _sayac = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return t.cancel();
+      setState(() => _bekle--);
+      if (_bekle <= 0) t.cancel();
+    });
+  }
+
+  @override
+  void dispose() {
+    _sayac?.cancel();
+    _kod.dispose();
+    super.dispose();
+  }
 
   Future<void> _dogrula() async {
     final kod = _kod.text.trim();
@@ -55,6 +80,7 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> _tekrar() async {
     try {
       await db.auth.signInWithOtp(phone: widget.telefon);
+      if (mounted) _sayacBaslat();
       if (mounted) bildir(context, 'Yeni kod gönderildi');
     } on AuthException catch (e) {
       if (mounted) bildir(context, 'Kod gönderilemedi: ${e.message}');
@@ -83,11 +109,22 @@ class _OtpScreenState extends State<OtpScreen> {
                   const SizedBox(height: 20),
                   TextField(
                     controller: _kod,
+                    autofocus: true,
                     keyboardType: TextInputType.number,
+                    // iPhone/Android SMS'ten gelen kodu klavyenin üstünde önerir
+                    autofillHints: const [AutofillHints.oneTimeCode],
+                    // 6 hane tamamlanınca kendiliğinden doğrular
+                    onChanged: (v) {
+                      if (_hata != null) setState(() => _hata = null);
+                      if (v.trim().length == 6 && !_yukleniyor) _dogrula();
+                    },
+                    onSubmitted: (_) => _dogrula(),
                     maxLength: 6,
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 30, letterSpacing: 10, fontWeight: FontWeight.w800),
                     decoration: InputDecoration(
+                      hintText: '6 haneli kod',
+                      hintStyle: const TextStyle(fontSize: 18, letterSpacing: 0, fontWeight: FontWeight.w600, color: Renk.soluk),
                       counterText: '',
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -111,7 +148,10 @@ class _OtpScreenState extends State<OtpScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextButton(onPressed: _tekrar, child: const Text('Kodu tekrar gönder')),
+                      TextButton(
+                        onPressed: _bekle > 0 ? null : _tekrar,
+                        child: Text(_bekle > 0 ? 'Tekrar gönder (${_bekle}s)' : 'Kodu tekrar gönder'),
+                      ),
                       TextButton(
                         onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => NoCodeScreen(telefon: widget.telefon, tekrar: _tekrar))),
                         child: const Text('Kod gelmedi mi?'),

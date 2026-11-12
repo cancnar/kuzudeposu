@@ -5,6 +5,7 @@ import '../galeri.dart';
 import '../rehber.dart';
 import '../video.dart';
 import '../models.dart';
+import '../paylas.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -73,7 +74,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _favori() async {
     final i = _i!;
-    if (!await girisGerekli(context)) return;
+    if (!await girisGerekli(context, ilanId: _i?.id ?? widget.ilanId)) return;
     final ekle = !app.favoriler.contains(i.id);
     ekle ? app.favoriler.add(i.id) : app.favoriler.remove(i.id);
     app.yenile();
@@ -87,7 +88,7 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _mesaj() async {
-    if (!await girisGerekli(context)) return;
+    if (!await girisGerekli(context, ilanId: _i?.id ?? widget.ilanId)) return;
     try {
       final id = await konusmaAc(_i!);
       if (!mounted) return;
@@ -98,32 +99,65 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _teklif() async {
-    if (!await girisGerekli(context)) return;
+    if (!await girisGerekli(context, ilanId: _i?.id ?? widget.ilanId)) return;
+    final istenen = _i!.toplam;
     final c = TextEditingController();
-    final tutar = await showDialog<String>(
+    String? hata;
+    final tutar = await showDialog<double>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Teklif ver'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('İstenen fiyat: ${tl(_i!.toplam)}', style: const TextStyle(color: Renk.soluk)),
-            const SizedBox(height: 10),
-            TextField(controller: c, autofocus: true, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Teklifin (₺)')),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, yenile) {
+        final t = sayiOku(c.text)?.toDouble();
+        final fark = t == null ? null : (t - istenen) / istenen * 100;
+        void gonder() {
+          final x = sayiOku(c.text)?.toDouble();
+          if (x == null || x <= 0) {
+            yenile(() => hata = 'Teklifini tutar olarak yaz.');
+          } else if (x < istenen * .3) {
+            yenile(() => hata = 'İstenen fiyatın %30\'undan düşük teklif gönderilemez.');
+          } else if (x > istenen) {
+            yenile(() => hata = 'Teklif, istenen fiyattan yüksek olamaz.');
+          } else {
+            Navigator.pop(ctx, x);
+          }
+        }
+
+        return AlertDialog(
+          title: const Text('Teklif ver'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('İstenen fiyat: ${tl(istenen)}', style: const TextStyle(color: Renk.soluk)),
+              const SizedBox(height: 10),
+              TextField(
+                controller: c,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                onChanged: (_) => yenile(() => hata = null),
+                onSubmitted: (_) => gonder(),
+                decoration: InputDecoration(labelText: 'Teklifin (₺)', suffixText: '₺', errorText: hata, errorMaxLines: 2),
+              ),
+              if (fark != null && hata == null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(fark.abs() < .5 ? 'İstenen fiyatla aynı' : 'İstenen fiyatın %${fark.abs().round()} ${fark < 0 ? 'altında' : 'üstünde'}',
+                      style: const TextStyle(color: Renk.soluk, fontWeight: FontWeight.w700)),
+                ),
+              const SizedBox(height: 8),
+              const Text('Satıcı teklifini kabul ederse sohbette görürsün. Görmeden kapora gönderme.', style: TextStyle(fontSize: 13, color: Renk.soluk)),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
+            FilledButton(onPressed: gonder, child: const Text('Teklifi gönder')),
           ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, c.text), child: const Text('Teklifi gönder')),
-        ],
-      ),
+        );
+      }),
     );
-    final t = sayiOku(tutar ?? '');
-    if (t == null || t <= 0) return;
+    if (tutar == null) return;
     try {
       final id = await konusmaAc(_i!);
-      await mesajGonder(id, 'Merhaba, bu ilan için ${tl(t)} teklif ediyorum. Uygun olur mu?');
+      await teklifGonder(id, tutar, '${tl(tutar)} teklif ediyorum (istenen ${tl(istenen)}). Uygun olur mu?');
       if (!mounted) return;
       await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatScreen(konusmaId: id)));
     } catch (e) {
@@ -423,6 +457,11 @@ class _DetailScreenState extends State<DetailScreen> {
                       left: 12,
                       top: MediaQuery.of(context).padding.top + 10,
                       child: YuzenDugme(ikon: Icons.arrow_back_ios_new_rounded, ipucu: 'Geri', renk: Renk.murekkep, onPressed: () => Navigator.of(context).pop()),
+                    ),
+                    Positioned(
+                      right: _benim ? 12 : 64,
+                      top: MediaQuery.of(context).padding.top + 10,
+                      child: YuzenDugme(ikon: Icons.ios_share_rounded, ipucu: 'Paylaş', renk: Renk.murekkep, onPressed: () => ilanPaylas(context, i)),
                     ),
                     if (!_benim)
                       Positioned(

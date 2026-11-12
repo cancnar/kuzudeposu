@@ -86,23 +86,29 @@ async function geri(p) {
   await tikla(p, 'numaram ile giriş', 2500);
   await snap(p, 'telefon');
   await yaz(p, 'Cep telefonu', '5559999999');
-  await p.mouse.click(44, 505); await p.waitForTimeout(600);
+  await p.getByRole('checkbox').first().click({ timeout: 5000, force: true }).catch(() => log.push('TIKLANAMADI kvkk'));
+  await p.waitForTimeout(600);
   await snap(p, 'telefon_dolu');
   await tikla(p, 'Kodu gönder', 5000);
-  await p.mouse.click(195, 606); await p.waitForTimeout(5000);
   await snap(p, 'otp');
-  await p.locator('input, textarea').first().focus().catch(() => {}); await p.waitForTimeout(900);
-  await p.keyboard.type('123456', { delay: 80 });
-  await p.waitForTimeout(500);
-  await tikla(p, 'Doğrula', 5000);
+  // Kod alanı: Flutter'ın gerçek <input> öğesine odaklan; 6 hane yazılınca uygulama kendiliğinden doğrular
+  await p.locator('input').first().click({ timeout: 5000, force: true }).catch(() => log.push('TIKLANAMADI otp'));
+  await p.waitForTimeout(600);
+  await p.keyboard.type('123456', { delay: 90 });
+  await p.waitForTimeout(6000);
   await snap(p, 'profil_kurulum');
   const urlSonrasi = await p.evaluate(() => document.body.innerText.slice(0, 200)).catch(() => '');
   await yaz(p, 'Ad soyad', 'CI Test Kullanıcı');
-  await yaz(p, 'İl', 'Manisa');
-  await yaz(p, 'İlçe', 'Salihli');
+  await tikla(p, 'İl ve ilçe', 2000);
+  await snap(p, 'konum_il');
+  await yaz(p, 'İl ara', 'manisa');
+  await tikla(p, 'Manisa', 1500);
+  await yaz(p, 'İlçe ara', 'salih');
+  await snap(p, 'konum_ilce');
+  await tikla(p, 'Salihli', 1500);
   await tikla(p, 'Yetiştirici', 500);
   await snap(p, 'profil_kurulum_dolu');
-  await tikla(p, 'Devam', 5000) || await tikla(p, 'Kaydet', 5000) || await tikla(p, 'Başla', 5000);
+  await tikla(p, 'Başla', 5000) || await tikla(p, 'Kaydet', 5000);
   await snap(p, 'giris_sonrasi_ana');
 
   // --- Girişli ekranlar ---
@@ -110,8 +116,25 @@ async function geri(p) {
   await snap(p, 'artı_menü');
   await tikla(p, 'Hayvan satıyorum', 3000);
   await snap(p, 'ilan_ver_1');
-  for (let k = 2; k <= 5; k++) { await kaydir(p, 650); await snap(p, 'ilan_ver_' + k); }
+  await tikla(p, 'Devam', 1200); await snap(p, 'ilan_ver_1_hata');
+  await tikla(p, 'Küçükbaş', 800);
+  await tikla(p, 'Kıvırcık', 800);
+  await snap(p, 'ilan_ver_1_dolu');
+  await tikla(p, 'Devam', 1500); await snap(p, 'ilan_ver_2');
+  await tikla(p, 'Devam', 1200); await snap(p, 'ilan_ver_2_hata');
+  await yaz(p, 'Yaş', '10');
+  await yaz(p, 'Canlı ağırlık', '4');
+  await yaz(p, 'Toplam fiyat', '18000');
+  await tikla(p, 'Devam', 1200); await snap(p, 'ilan_ver_2_makul');
+  await yaz(p, 'Canlı ağırlık', '5');
+  await snap(p, 'ilan_ver_2_dolu');
+  await tikla(p, 'Devam', 1500); await snap(p, 'ilan_ver_3');
+  await kaydir(p, 650); await snap(p, 'ilan_ver_3_alt');
+  await tikla(p, 'Devam', 1500); await snap(p, 'ilan_ver_4');
+  await kaydir(p, 650); await snap(p, 'ilan_ver_4_alt');
   await geri(p);
+  await tikla(p, 'Çık', 1500);
+  await snap(p, 'ilan_ver_cikis');
   await p.mouse.click(195, 804); await p.waitForTimeout(1500);
   await tikla(p, 'Hayvan arıyorum', 3000);
   await snap(p, 'talep_ver_1');

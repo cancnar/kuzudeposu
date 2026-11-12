@@ -76,7 +76,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           final liste = s.data!;
           return ListView(
             children: [
-              if (liste.isEmpty) const Padding(padding: EdgeInsets.all(40), child: Text('Bildirimin yok.', textAlign: TextAlign.center, style: TextStyle(color: Renk.soluk))),
+              if (liste.isEmpty) const Bos('Henüz bildirim yok', 'Mesaj, teklif, fiyat düşüşü ve kayıtlı aramana uyan yeni ilanlar burada görünür.'),
               for (final n in liste)
                 InkWell(
                   onTap: () => _ac(n),

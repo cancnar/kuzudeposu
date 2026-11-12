@@ -284,7 +284,8 @@ class IlanKarti extends StatelessWidget {
                   children: [
                     Stack(
                       children: [
-                        FotoKutusu(url: i.foto.isEmpty ? null : i.foto.first, yukseklik: 190, yaricap: 13),
+                        // Fotoğrafsız ilanda büyük boş kutu yerine kısa bir şerit (listede daha çok ilan görünür)
+                        FotoKutusu(url: i.foto.isEmpty ? null : i.foto.first, yukseklik: i.foto.isEmpty ? 96 : 190, yaricap: 13),
                         if (i.suru) Positioned(left: 10, top: 10, child: _FotoEtiket('Sürü · ${i.adet} baş')),
                         if (i.videoVar)
                           const Positioned(

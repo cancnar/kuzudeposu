@@ -665,3 +665,89 @@ class _KullaniciScreenState extends State<KullaniciScreen> {
     );
   }
 }
+
+// ======================= DESTEK MESAJLARI =======================
+
+class DestekScreen extends StatefulWidget {
+  const DestekScreen({super.key});
+  @override
+  State<DestekScreen> createState() => _DestekScreenState();
+}
+
+class _DestekScreenState extends State<DestekScreen> {
+  String _durum = 'yeni';
+  late Future<List<YDestek>> _f = yonetim.destek(_durum);
+  void _yenile() => setState(() { _f = yonetim.destek(_durum); });
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Destek mesajları')),
+        body: Column(children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Row(children: [
+              Cip('Yeni', _durum == 'yeni', () {
+                _durum = 'yeni';
+                _yenile();
+              }),
+              Cip('Kapandı', _durum == 'kapandi', () {
+                _durum = 'kapandi';
+                _yenile();
+              }),
+            ]),
+          ),
+          Expanded(
+            child: FutureBuilder<List<YDestek>>(
+              future: _f,
+              builder: (context, s) {
+                if (s.connectionState != ConnectionState.done) return yukleniyor();
+                if (s.hasError) return HataKutusu('${s.error}\n(010_kullanici_testi.sql çalıştırıldı mı?)', tekrar: _yenile);
+                final l = s.data!;
+                if (l.isEmpty) return const Bos('Mesaj yok', 'Kullanıcıların "Bize yaz" ile gönderdiği mesajlar burada görünür.');
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  children: [
+                    for (final d in l)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: kutu(18),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                          Row(children: [
+                            Etiket(d.konuAd, uyari: d.konu == 'hata' || d.konu == 'sikayet'),
+                            const Spacer(),
+                            Text(goreli(d.tarih), style: const TextStyle(color: Renk.soluk, fontSize: 13)),
+                          ]),
+                          const SizedBox(height: 8),
+                          SelectableText(d.mesaj, style: const TextStyle(height: 1.45, fontSize: 15)),
+                          const SizedBox(height: 8),
+                          Text(
+                            d.kullaniciAd != null ? '${d.kullaniciAd} · ${telefonYaz(d.telefon)}' : 'Misafir${d.iletisim == null ? '' : ' · ${d.iletisim}'}',
+                            style: const TextStyle(color: Renk.soluk, fontSize: 13),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(children: [
+                            if (d.kullaniciId != null) ...[
+                              Expanded(
+                                child: _ikincil('Kullanıcı', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => KullaniciScreen(id: d.kullaniciId!))),
+                                    ikon: Icons.person_outline_rounded),
+                              ),
+                              const SizedBox(width: 10),
+                            ],
+                            Expanded(
+                              child: _ikincil(d.durum == 'yeni' ? 'Kapat' : 'Yeniden aç', () async {
+                                if (await _yap(context, () => yonetim.destekDurum(d.id, d.durum == 'yeni' ? 'kapandi' : 'yeni'), 'Güncellendi')) _yenile();
+                              }, ikon: d.durum == 'yeni' ? Icons.check_rounded : Icons.undo_rounded),
+                            ),
+                          ]),
+                        ]),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ]),
+      );
+}

@@ -15,6 +15,33 @@ abstract class YoneticiKaynak {
   Future<YKullanici> kullanici(String id);
   Future<void> askiyaAl(String id, bool askida, {String? neden});
   Future<void> ayar(String anahtar, Object deger);
+
+  /// Destek mesajları (010): yeni | kapandi
+  Future<List<YDestek>> destek(String durum);
+  Future<void> destekDurum(String id, String durum);
+}
+
+class YDestek {
+  YDestek({required this.id, required this.konu, required this.mesaj, required this.durum, required this.tarih, this.iletisim, this.kullaniciId, this.kullaniciAd, this.telefon});
+  final String id, konu, mesaj, durum;
+  final DateTime tarih;
+  final String? iletisim, kullaniciId, kullaniciAd, telefon;
+  String get konuAd => destekKonulari[konu] ?? konu;
+
+  factory YDestek.json(Map<String, dynamic> j) {
+    final k = j['kullanici'] as Map?;
+    return YDestek(
+      id: j['id'] as String,
+      konu: j['konu'] as String,
+      mesaj: j['mesaj'] as String,
+      durum: j['durum'] as String,
+      tarih: DateTime.parse(j['created_at'] as String),
+      iletisim: j['iletisim'] as String?,
+      kullaniciId: k?['id'] as String?,
+      kullaniciAd: k?['ad'] as String?,
+      telefon: j['telefon'] as String?,
+    );
+  }
 }
 
 YoneticiKaynak yonetim = RpcKaynak();
@@ -204,6 +231,12 @@ class RpcKaynak implements YoneticiKaynak {
 
   @override
   Future<void> ayar(String anahtar, Object deger) => db.rpc('yonetici_ayar', params: {'p_anahtar': anahtar, 'p_deger': deger});
+
+  @override
+  Future<List<YDestek>> destek(String durum) async => _liste(await db.rpc('yonetici_destek', params: {'p_durum': durum})).map(YDestek.json).toList();
+
+  @override
+  Future<void> destekDurum(String id, String durum) => db.rpc('yonetici_destek_durum', params: {'p_id': id, 'p_durum': durum});
 }
 
 /// Örnek veri: widget testleri ve yerel önizleme (localhost/?onizleme=yonetici). Gerçek kişi/veri değildir.
@@ -295,6 +328,7 @@ class OrnekKaynak implements YoneticiKaynak {
           'otomatik_gizlenen': _ilanlar.where((y) => y.ilan.moderasyon == 'otomatik_gizlendi').length,
           'supheli': _ilanlar.where(_supheli).length,
           'askida_kullanici': _kisiler.where((k) => k.askida).length,
+          'destek_yeni': _destek.where((d) => d.durum == 'yeni').length,
           'on_onay': _onOnay,
         };
         return o;
@@ -385,6 +419,24 @@ class OrnekKaynak implements YoneticiKaynak {
 
   @override
   Future<void> ayar(String anahtar, Object deger) => _bekle(() => _onOnay = deger == true);
+
+  late final List<YDestek> _destek = [
+    YDestek(id: 'd1', konu: 'hata', mesaj: 'Fotoğraf yüklerken uygulama donuyor, 3 kere denedim.', durum: 'yeni',
+        tarih: DateTime.now().subtract(const Duration(hours: 2)), kullaniciId: 'k2', kullaniciAd: 'Hatice Demir', telefon: '905061112233'),
+    YDestek(id: 'd2', konu: 'soru', mesaj: 'Nakil belgesi olmadan başka ile satış yapabilir miyim?', durum: 'yeni',
+        tarih: DateTime.now().subtract(const Duration(days: 1)), iletisim: '0532 000 00 00'),
+  ];
+
+  @override
+  Future<List<YDestek>> destek(String durum) => _bekle(() => _destek.where((d) => d.durum == durum).toList());
+
+  @override
+  Future<void> destekDurum(String id, String durum) => _bekle(() {
+        final i = _destek.indexWhere((d) => d.id == id);
+        final d = _destek[i];
+        _destek[i] = YDestek(id: d.id, konu: d.konu, mesaj: d.mesaj, durum: durum, tarih: d.tarih, iletisim: d.iletisim,
+            kullaniciId: d.kullaniciId, kullaniciAd: d.kullaniciAd, telefon: d.telefon);
+      });
 }
 
 /// Panelin genel sayıları için örnek veri (gerçek değildir).

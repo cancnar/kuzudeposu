@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'konum.dart';
+
 const turEtiket = {'buyukbas': 'Büyükbaş', 'kucukbas': 'Küçükbaş', 'kanatli': 'Kanatlı', 'at': 'At'};
 final Map<String, String> turKod = {for (final e in turEtiket.entries) e.value: e.key};
 const cinsiyetEtiket = {'disi': 'Dişi', 'erkek': 'Erkek', 'karisik': 'Karışık'};
@@ -23,11 +25,39 @@ final Map<String, String> belgeKod = {for (final e in belgeEtiket.entries) e.val
 const teslimatEtiket = {'yerinde': 'Yerinden teslim', 'nakliye': 'Nakliye ile', 'ikisi': 'Yerinde veya nakliye'};
 
 const turSecenekleri = ['Büyükbaş', 'Küçükbaş', 'Kanatlı', 'At'];
+
+/// Makul değer aralıkları (hayvan başı kg, kg fiyatı ₺). Veri tabanındaki public.ilan_makul() ile aynı tutulur;
+/// fiyat sınırları enflasyonla yılda bir gözden geçirilir.
+const makulAralik = <String, ({double kgMin, double kgMax, double fMin, double fMax})>{
+  'buyukbas': (kgMin: 40, kgMax: 1500, fMin: 100, fMax: 3000),
+  'kucukbas': (kgMin: 3, kgMax: 200, fMin: 100, fMax: 3000),
+  'kanatli': (kgMin: 0.2, kgMax: 25, fMin: 20, fMax: 5000),
+  'at': (kgMin: 50, kgMax: 1200, fMin: 20, fMax: 10000),
+};
+
+/// Ağırlık makul değilse hata metni (yoksa null).
+String? agirlikMakul(String tur, double kg) {
+  final a = makulAralik[tur];
+  if (a == null) return null;
+  if (kg < a.kgMin || kg > a.kgMax) return '${turEtiket[tur]} için hayvan başı ${sayi(a.kgMin)}–${sayi(a.kgMax)} kg olmalı.';
+  return null;
+}
+
+/// Toplam fiyat makul değilse hata metni (yoksa null).
+String? fiyatMakul(String tur, int adet, double kg, double toplam) {
+  final a = makulAralik[tur];
+  if (a == null || kg <= 0 || adet <= 0) return null;
+  final f = toplam / (adet * kg);
+  if (f < a.fMin || f > a.fMax) {
+    return 'Kg fiyatı ${sayi(f)} ₺ çıkıyor; ${turEtiket[tur]!.toLowerCase()} için ${sayi(a.fMin)}–${sayi(a.fMax)} ₺/kg olmalı. Toplam fiyatı kontrol et.';
+  }
+  return null;
+}
 const cinsListesi = <String, List<String>>{
-  'Büyükbaş': ['Simental', 'Holstein', 'Montofon', 'Şarole', 'Angus', 'Yerli kara'],
-  'Küçükbaş': ['Akkaraman', 'Merinos', 'Kıvırcık', 'Sakız', 'Daglıç', 'Saanen keçisi'],
+  'Büyükbaş': ['Simental', 'Holstein', 'Montofon', 'Şarole', 'Angus', 'Jersey', 'Yerli kara', 'Manda', 'Melez'],
+  'Küçükbaş': ['Akkaraman', 'Merinos', 'Kıvırcık', 'Sakız', 'Dağlıç', 'Karayaka', 'İvesi', 'Saanen keçisi', 'Kıl keçisi', 'Melez'],
   'Kanatlı': ['Tavuk', 'Hindi', 'Kaz', 'Ördek'],
-  'At': ['Arap', 'İngiliz', 'Rahvan', 'Yerli'],
+  'At': ['Arap', 'İngiliz', 'Rahvan', 'Yerli', 'Midilli'],
 };
 
 String sayi(num n) {
@@ -245,11 +275,16 @@ class Filtre {
     'fiyatMin': '',
     'fiyatMax': '',
     'il': '',
+    'mesafe': '',
     'amac': 'Hepsi',
     'belgeler': '',
     'sirala': 'En yeni',
   };
-  static const siralamalar = ['En yeni', 'Fiyat: artan', 'Fiyat: azalan'];
+  static const siralamalar = ['En yeni', 'En yakın', 'Fiyat: artan', 'Fiyat: azalan'];
+  static const mesafeler = {'': 'Sadece burası', '50': '50 km', '100': '100 km', '200': '200 km'};
+
+  /// "En yakın" sıralaması ve mesafe filtresi için merkez (filtredeki konum, yoksa profil konumu).
+  static ({double lat, double lng})? Function()? profilKonumu;
 
   Filtre([Map<String, String>? m]) : v = {...varsayilan, ...?m};
   factory Filtre.json(dynamic j) {
@@ -302,7 +337,7 @@ class Filtre {
     if (this['fiyatMin'].isNotEmpty || this['fiyatMax'].isNotEmpty) {
       o.add(AktifEtiket('${_aralik('fiyatMin', 'fiyatMax')} ₺', ['fiyatMin', 'fiyatMax']));
     }
-    if (this['il'].isNotEmpty) o.add(AktifEtiket(this['il'], ['il']));
+    if (this['il'].isNotEmpty) o.add(AktifEtiket(this['mesafe'].isEmpty ? this['il'] : '${this['il']} · ${this['mesafe']} km', ['il', 'mesafe']));
     if (this['amac'] != 'Hepsi') o.add(AktifEtiket(this['amac'], ['amac']));
     if (belgeSecili.isNotEmpty) o.add(AktifEtiket(belgeSecili.map((k) => belgeEtiket[k] ?? k).join(' + '), ['belgeler']));
     return o;
@@ -328,12 +363,30 @@ class Filtre {
     n('kgMax', 'p_kg_max');
     n('fiyatMin', 'p_fiyat_min');
     n('fiyatMax', 'p_fiyat_max');
-    if (this['il'].trim().isNotEmpty) p['p_il'] = this['il'].trim();
+    final yer = konumCoz(this['il']);
+    final merkez = yer == null ? null : konumu(yer.il, yer.ilce);
+    if (this['il'].trim().isNotEmpty) {
+      if (merkez != null && this['mesafe'].isNotEmpty) {
+        p['p_lat'] = merkez.lat;
+        p['p_lng'] = merkez.lng;
+        p['p_radius_km'] = int.tryParse(this['mesafe']) ?? 100;
+      } else {
+        p['p_il'] = yer == null ? this['il'].trim() : (yer.ilce ?? yer.il);
+      }
+    }
+    if (this['sirala'] == 'En yakın' && !p.containsKey('p_lat')) {
+      final m = merkez ?? profilKonumu?.call();
+      if (m != null) {
+        p['p_lat'] = m.lat;
+        p['p_lng'] = m.lng;
+      }
+    }
     if (this['amac'] != 'Hepsi') p['p_amac'] = amacKod[this['amac']];
     if (belgeSecili.isNotEmpty) p['p_belgeler'] = belgeSecili;
     p['p_sort'] = switch (this['sirala']) {
       'Fiyat: artan' => 'fiyat_artan',
       'Fiyat: azalan' => 'fiyat_azalan',
+      'En yakın' => 'en_yakin',
       _ => 'en_yeni',
     };
     return p;
@@ -341,16 +394,27 @@ class Filtre {
 }
 
 class Mesaj {
-  Mesaj({required this.id, required this.gonderen, required this.metin, required this.zaman, this.okundu});
+  Mesaj({required this.id, required this.gonderen, required this.metin, required this.zaman, this.okundu, this.tur = 'metin', this.tutar, this.yanit});
   final String id, gonderen, metin;
   final DateTime zaman;
   final DateTime? okundu;
+
+  /// metin | teklif | teklif_yanit (010)
+  final String tur;
+  final double? tutar;
+
+  /// Teklif için: kabul | red | null (yanıt bekliyor)
+  final String? yanit;
+  bool get teklif => tur == 'teklif' && tutar != null;
   factory Mesaj.json(Map<String, dynamic> j) => Mesaj(
         id: j['id'] as String,
         gonderen: j['sender_id'] as String,
         metin: j['body'] as String,
         zaman: DateTime.parse(j['created_at'] as String),
         okundu: j['read_at'] == null ? null : DateTime.parse(j['read_at'] as String),
+        tur: j['tur'] as String? ?? 'metin',
+        tutar: (j['tutar'] as num?)?.toDouble(),
+        yanit: j['yanit'] as String?,
       );
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../data.dart';
 import '../models.dart';
@@ -7,6 +8,8 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'admin_screen.dart';
 import 'detail_screen.dart';
+import 'metinler_screen.dart';
+import 'profile_setup_screen.dart';
 import 'settings_screens.dart';
 import 'shell.dart';
 
@@ -49,11 +52,7 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 32,
-                backgroundColor: Renk.okZemin,
-                child: Text(ad.isEmpty ? '?' : ad.substring(0, 1).toUpperCase(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Renk.okYazi)),
-              ),
+              ProfilFoto(ad: ad, yol: p['avatar_path'] as String?),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -100,6 +99,16 @@ class ProfileScreen extends StatelessWidget {
               ]),
             ),
           ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          child: Basma(
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileSetupScreen(duzenle: true))),
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              label: const Text('Profili düzenle'),
+            ),
+          ),
+        ),
         Bolum('', [
           Satir('İlanlarım', ikon: Icons.list_alt_rounded, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MineScreen()))),
           Satir('Favorilerim', ikon: Icons.favorite_border, onTap: () {
@@ -114,7 +123,7 @@ class ProfileScreen extends StatelessWidget {
           ]),
         Bolum('', [
           Satir('Ayarlar', ikon: Icons.settings_outlined, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()))),
-          Satir('Yardım ve destek', ikon: Icons.help_outline, onTap: () => bildir(context, 'Yardım sayfası yayın öncesi eklenecek')),
+          Satir('Yardım ve destek', ikon: Icons.help_outline, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const YardimScreen()))),
         ]),
         Bolum('', [
           Satir('Çıkış yap', ikon: Icons.logout_rounded, renk: Renk.kiremit, onTap: () => _cikis(context)),
@@ -164,6 +173,72 @@ class _MineScreenState extends State<MineScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Profil fotoğrafı: dokununca galeriden seçip yükler (avatars kovası, kendi klasörü).
+class ProfilFoto extends StatefulWidget {
+  const ProfilFoto({super.key, required this.ad, this.yol});
+  final String ad;
+  final String? yol;
+  @override
+  State<ProfilFoto> createState() => _ProfilFotoState();
+}
+
+class _ProfilFotoState extends State<ProfilFoto> {
+  bool _yuk = false;
+
+  Future<void> _sec() async {
+    try {
+      final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 600);
+      if (x == null) return;
+      setState(() => _yuk = true);
+      final uz = x.name.contains('.') ? x.name.split('.').last.toLowerCase() : 'jpg';
+      final tip = switch (uz) { 'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg' };
+      await avatarYukle(FotoDosya(await x.readAsBytes(), x.name, tip));
+      await app.profilYukle();
+      if (mounted) bildir(context, 'Profil fotoğrafın güncellendi');
+    } catch (e) {
+      if (mounted) bildir(context, 'Fotoğraf yüklenemedi: $e');
+    } finally {
+      if (mounted) setState(() => _yuk = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final url = avatarUrl(widget.yol);
+    return Semantics(
+      button: true,
+      label: 'Profil fotoğrafını değiştir',
+      excludeSemantics: true,
+      onTap: _sec,
+      child: Basma(
+        child: GestureDetector(
+          onTap: _yuk ? null : _sec,
+          child: Stack(clipBehavior: Clip.none, children: [
+            CircleAvatar(
+              radius: 32,
+              backgroundColor: Renk.okZemin,
+              foregroundImage: url == null ? null : NetworkImage(url),
+              child: Text(widget.ad.isEmpty ? '?' : widget.ad.substring(0, 1).toUpperCase(),
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Renk.okYazi)),
+            ),
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(color: Renk.yesil, shape: BoxShape.circle, border: Border.all(color: Renk.krem, width: 2)),
+                child: _yuk
+                    ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.photo_camera_outlined, size: 12, color: Colors.white),
+              ),
+            ),
+          ]),
+        ),
       ),
     );
   }

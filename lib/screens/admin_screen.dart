@@ -255,6 +255,8 @@ class _ModerasyonBolumu extends StatelessWidget {
       Bolum('', [
         Satir('Kullanıcılar', ikon: Icons.manage_accounts_outlined, deger: n('askida_kullanici') > 0 ? '${n('askida_kullanici')} askıda' : null,
             onTap: () => git(const KullanicilarScreen())),
+        Satir('Destek mesajları', ikon: Icons.mail_outline_rounded, deger: n('destek_yeni') > 0 ? '${n('destek_yeni')} yeni' : null,
+            onTap: () => git(const DestekScreen())),
         Satir('İlanlarda ara', ikon: Icons.search_rounded, onTap: () => git(const YoneticiIlanlarScreen(filtre: 'tumu', baslikYazi: 'İlanlarda ara'))),
         Satir('Gizlenen ve kaldırılan ilanlar', ikon: Icons.inventory_2_outlined,
             onTap: () => git(const YoneticiIlanlarScreen(filtre: 'gizli', baslikYazi: 'Gizlenen ve kaldırılanlar'))),

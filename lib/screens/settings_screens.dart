@@ -5,6 +5,7 @@ import '../models.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'metinler_screen.dart';
 import 'profile_setup_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -55,24 +56,14 @@ class SettingsScreen extends StatelessWidget {
               ),
             ]),
             Bolum('Destek', [
-              Satir('Kullanım koşulları', onTap: () => _metin(context, 'Kullanım koşulları')),
-              Satir('Gizlilik politikası ve KVKK', onTap: () => _metin(context, 'Gizlilik politikası ve KVKK')),
+              Satir('Kullanım koşulları', onTap: () => kosullariAc(context)),
+              Satir('KVKK aydınlatma metni', onTap: () => kvkkAc(context)),
+              Satir('Yardım ve destek', onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const YardimScreen()))),
               Satir('Hakkında', deger: 'Sürüm 0.2.0', onTap: () => bildir(context, 'Kuzu Deposu · test sürümü')),
             ]),
             const SizedBox(height: 24),
           ],
         ),
-      ),
-    );
-  }
-
-  void _metin(BuildContext c, String baslikYazi) {
-    showDialog<void>(
-      context: c,
-      builder: (ctx) => AlertDialog(
-        title: Text(baslikYazi),
-        content: const Text('Bu metin, yayından önce hukuki incelemeden geçirilerek buraya eklenecek.'),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tamam'))],
       ),
     );
   }

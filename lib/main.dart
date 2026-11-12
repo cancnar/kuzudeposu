@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
 import 'data.dart';
+import 'konum.dart';
+import 'models.dart';
 import 'screens/admin_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'screens/shell.dart';
@@ -20,6 +22,13 @@ Future<void> main() async {
   db.auth.onAuthStateChange.listen((d) => app.oturumDegisti(d.session));
   app.oturumDegisti(db.auth.currentSession);
   app.ziyaretBildir();
+  // Paylaşılan ilan bağlantısı: .../kuzudeposu/?ilan=<id>. Giriş yapmamış kişi karşılama yerine doğrudan ilanı görür.
+  final paylasilan = Uri.base.queryParameters['ilan'];
+  if (paylasilan != null && RegExp(r'^[0-9a-f-]{36}$').hasMatch(paylasilan)) {
+    app.paylasilanIlanId = paylasilan;
+    if (db.auth.currentSession == null) app.misafir = true;
+  }
+  Filtre.profilKonumu = () => konumu(app.profil?['il'] as String?, app.profil?['ilce'] as String?);
   runApp(const KuzuDeposuApp());
 }
 

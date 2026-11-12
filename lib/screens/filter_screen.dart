@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data.dart';
+import '../konum.dart';
 import '../models.dart';
 import '../state.dart';
 import '../theme.dart';
@@ -66,6 +67,53 @@ class _FilterScreenState extends State<FilterScreen> {
           ],
         ),
       );
+
+  Widget _konum() {
+    final yer = konumCoz(_f['il']);
+    final profilIl = ilBul(app.profil?['il'] as String?)?.ad;
+    final profilIlce = ilceBul(profilIl, app.profil?['ilce'] as String?)?.ad;
+    void ayarla(String il, String? ilce) {
+      setState(() {
+        _f['il'] = konumYaz(il, ilce);
+        if (_f['mesafe'].isEmpty && ilce != null) _f['mesafe'] = '50';
+      });
+      _planla();
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      KonumAlani(
+        etiket: 'İl veya ilçe',
+        il: yer?.il ?? (_f['il'].isEmpty ? null : _f['il']),
+        ilce: yer?.ilce,
+        ilceZorunlu: false,
+        secildi: ayarla,
+      ),
+      if (profilIl != null && _f['il'] != konumYaz(profilIl, profilIlce))
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: TextButton.icon(
+            onPressed: () => ayarla(profilIl, profilIlce),
+            icon: const Icon(Icons.my_location_rounded, size: 18),
+            label: Text('Kendi konumum (${konumYaz(profilIl, profilIlce)})'),
+          ),
+        ),
+      if (_f['il'].isNotEmpty) ...[
+        const SizedBox(height: 10),
+        const Text('Mesafe', style: TextStyle(color: Renk.soluk, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 6),
+        Wrap(runSpacing: 8, children: [
+          for (final e in Filtre.mesafeler.entries) Cip(e.key.isEmpty ? e.value : '${e.value} içinde', _f['mesafe'] == e.key, () => _sec('mesafe', e.key)),
+        ]),
+        TextButton(
+          onPressed: () {
+            setState(() => _f.sifirla(['il', 'mesafe']));
+            _planla();
+          },
+          child: const Text('Konumu kaldır'),
+        ),
+      ],
+    ]);
+  }
 
   Widget _cipler(String k, List<String> secenekler) => Wrap(
         runSpacing: 8,
@@ -160,18 +208,7 @@ class _FilterScreenState extends State<FilterScreen> {
           ),
           _grup('Yaş ve ağırlık', Column(children: [_aralik('Yaş', 'yasMin', 'yasMax', 'ay'), _aralik('Ağırlık (sürüde ortalama)', 'kgMin', 'kgMax', 'kg')])),
           _grup('Fiyat', _aralik('Toplam fiyat', 'fiyatMin', 'fiyatMax', '₺')),
-          _grup(
-            'Konum',
-            TextFormField(
-              key: ValueKey('il$_anahtar'),
-              initialValue: _f['il'],
-              decoration: const InputDecoration(hintText: 'İl veya ilçe'),
-              onChanged: (v) {
-                _f['il'] = v;
-                _planla();
-              },
-            ),
-          ),
+          _grup('Konum', _konum()),
           _grup('Satış amacı', _cipler('amac', ['Hepsi', ...amacEtiket.values])),
           _grup(
             'Belgeler',

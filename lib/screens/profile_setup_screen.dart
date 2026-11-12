@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data.dart';
+import '../konum.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -17,8 +18,9 @@ class ProfileSetupScreen extends StatefulWidget {
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   late final TextEditingController _ad;
-  late final TextEditingController _il;
-  late final TextEditingController _ilce;
+  String? _il;
+  String? _ilce;
+  String? _adHata, _konumHata;
   late String _rol;
   bool _yukleniyor = false;
   String? _hata;
@@ -30,23 +32,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     super.initState();
     final p = widget.duzenle ? app.profil : null;
     _ad = TextEditingController(text: p?['full_name'] as String? ?? '');
-    _il = TextEditingController(text: p?['il'] as String? ?? '');
-    _ilce = TextEditingController(text: p?['ilce'] as String? ?? '');
+    // Eski serbest metin kayıtları ("manisa") resmi yazılışa çevrilir
+    final eskiIl = p?['il'] as String?;
+    _il = ilBul(eskiIl)?.ad ?? (eskiIl == null || eskiIl.isEmpty ? null : eskiIl);
+    _ilce = ilceBul(_il, p?['ilce'] as String?)?.ad ?? p?['ilce'] as String?;
     _rol = p?['role'] as String? ?? 'yetistirici';
   }
 
   Future<void> _kaydet() async {
     final ad = _ad.text.trim();
-    final il = _il.text.trim();
-    final ilce = _ilce.text.trim();
-    if (ad.length < 3) {
-      setState(() => _hata = 'Ad soyadını gir.');
-      return;
-    }
-    if (il.isEmpty || ilce.isEmpty) {
-      setState(() => _hata = 'İl ve ilçeni gir.');
-      return;
-    }
+    final il = _il ?? '';
+    final ilce = _ilce ?? '';
+    setState(() {
+      _adHata = ad.length < 3 ? 'Adını ve soyadını yaz.' : null;
+      _konumHata = il.isEmpty || ilce.isEmpty ? 'İlini ve ilçeni seç.' : null;
+    });
+    if (_adHata != null || _konumHata != null) return;
     setState(() {
       _hata = null;
       _yukleniyor = true;
@@ -93,14 +94,23 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   const Text('Alıcılar ilanında adını ve ilçeni görür. Telefon numaran gizli kalır.',
                       style: TextStyle(color: Renk.soluk, fontSize: 15, height: 1.5)),
                   const SizedBox(height: 20),
-                  TextField(controller: _ad, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Ad soyad')),
+                  TextField(
+                    controller: _ad,
+                    textCapitalization: TextCapitalization.words,
+                    autofillHints: const [AutofillHints.name],
+                    onChanged: (_) => _adHata == null ? null : setState(() => _adHata = null),
+                    decoration: InputDecoration(labelText: 'Ad soyad', errorText: _adHata),
+                  ),
                   const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(child: TextField(controller: _il, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'İl'))),
-                      const SizedBox(width: 12),
-                      Expanded(child: TextField(controller: _ilce, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'İlçe'))),
-                    ],
+                  KonumAlani(
+                    il: _il,
+                    ilce: _ilce,
+                    hata: _konumHata,
+                    secildi: (il, ilce) => setState(() {
+                      _il = il;
+                      _ilce = ilce;
+                      _konumHata = null;
+                    }),
                   ),
                   const SizedBox(height: 16),
                   const Text('Ben bir', style: TextStyle(fontWeight: FontWeight.w800)),

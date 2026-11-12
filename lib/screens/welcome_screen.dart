@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'metinler_screen.dart';
 import 'phone_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -86,10 +87,11 @@ class WelcomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        const Text(
-                          'Devam ederek Kullanım Koşulları ve Gizlilik Politikası\'nı kabul etmiş olursun.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Renk.soluk, fontSize: 12, height: 1.5),
+                        const SartlarMetni(
+                          once: 'Devam ederek ',
+                          sonra: '\'ni kabul etmiş olursun.',
+                          ortala: true,
+                          stil: TextStyle(color: Renk.soluk, fontSize: 12, height: 1.5),
                         ),
                       ],
                     ),

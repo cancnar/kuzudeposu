@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data.dart';
+import '../konum.dart';
 import '../models.dart';
 import '../state.dart';
 import '../theme.dart';
@@ -253,21 +254,19 @@ class _TalepVerScreenState extends State<TalepVerScreen> {
   String? _amac;
   int _adet = 1;
   final _butce = TextEditingController();
-  late final TextEditingController _il = TextEditingController(text: app.profil?['il'] as String? ?? '');
+  String? _il = ilBul(app.profil?['il'] as String?)?.ad;
+  String? _ilHata, _butceHata;
   final _acik = TextEditingController();
   bool _yuk = false;
   String? _hata;
 
   Future<void> _yayinla() async {
     final b = sayiOku(_butce.text);
-    if (_il.text.trim().isEmpty) {
-      setState(() => _hata = 'Hangi ilde aradığını yaz.');
-      return;
-    }
-    if (_butce.text.trim().isNotEmpty && (b == null || b <= 0)) {
-      setState(() => _hata = 'Bütçeyi sayı olarak gir.');
-      return;
-    }
+    setState(() {
+      _ilHata = _il == null ? 'Hangi ilde aradığını seç.' : null;
+      _butceHata = _butce.text.trim().isNotEmpty && (b == null || b <= 0) ? 'Bütçeyi sayı olarak gir.' : null;
+    });
+    if (_ilHata != null || _butceHata != null) return;
     setState(() {
       _hata = null;
       _yuk = true;
@@ -280,7 +279,7 @@ class _TalepVerScreenState extends State<TalepVerScreen> {
         'adet': _adet,
         'amac': _amac,
         'butce_max': b,
-        'il': _il.text.trim(),
+        'il': _il,
         'aciklama': _acik.text.trim().isEmpty ? null : _acik.text.trim(),
       });
       if (!mounted) return;
@@ -346,12 +345,21 @@ class _TalepVerScreenState extends State<TalepVerScreen> {
             for (final e in amacEtiket.entries) Cip(e.value, _amac == e.key, () => setState(() => _amac = _amac == e.key ? null : e.key)),
           ]),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(child: TextField(controller: _il, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'İl'))),
-              const SizedBox(width: 12),
-              Expanded(child: TextField(controller: _butce, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'En fazla bütçe (₺)'))),
-            ],
+          KonumAlani(
+            etiket: 'Hangi ilde arıyorsun?',
+            il: _il,
+            ilceSor: false,
+            hata: _ilHata,
+            secildi: (il, _) => setState(() {
+              _il = il;
+              _ilHata = null;
+            }),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _butce,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: 'En fazla bütçe (₺, isteğe bağlı)', errorText: _butceHata),
           ),
           const SizedBox(height: 14),
           TextField(controller: _acik, maxLines: 3, maxLength: 1000, decoration: const InputDecoration(labelText: 'Not (isteğe bağlı)', alignLabelWithHint: true)),
