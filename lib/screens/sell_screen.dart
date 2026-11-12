@@ -313,15 +313,20 @@ class _SellScreenState extends State<SellScreen> {
       _hataYazi('tur'),
       if (_tur != null) ...[
         const SizedBox(height: 18),
-        KeyedSubtree(key: _k['cins'], child: _etiket('Cins')),
-        Wrap(runSpacing: 8, children: [
-          for (final c in cinsler)
-            Cip(c, _cins == c, () => setState(() {
-                  _cins = c;
-                  _h.remove('cins');
-                })),
-        ]),
-        _hataYazi('cins'),
+        KeyedSubtree(
+          key: _k['cins'],
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _etiket('Cins'),
+            Wrap(runSpacing: 8, children: [
+              for (final c in cinsler)
+                Cip(c, _cins == c, () => setState(() {
+                      _cins = c;
+                      _h.remove('cins');
+                    })),
+            ]),
+            _hataYazi('cins'),
+          ]),
+        ),
         const SizedBox(height: 18),
         _etiket('Tek hayvan mı, sürü mü?'),
         Wrap(runSpacing: 8, children: [

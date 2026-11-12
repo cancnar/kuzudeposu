@@ -91,8 +91,9 @@ async function geri(p) {
   await snap(p, 'telefon_dolu');
   await tikla(p, 'Kodu gönder', 5000);
   await snap(p, 'otp');
-  // Kod alanı: Flutter'ın gerçek <input> öğesine odaklan; 6 hane yazılınca uygulama kendiliğinden doğrular
-  await p.locator('input').first().click({ timeout: 5000, force: true }).catch(() => log.push('TIKLANAMADI otp'));
+  // Kod alanı kendiliğinden odaklanır (autofocus); odak yoksa gerçek <input>'a odaklan. 6 hane yazılınca uygulama doğrular
+  const odakli = await p.evaluate(() => document.activeElement && document.activeElement.tagName === 'INPUT').catch(() => false);
+  if (!odakli) await p.locator('input').first().focus({ timeout: 5000 }).catch(() => log.push('ODAKLANAMADI otp'));
   await p.waitForTimeout(600);
   await p.keyboard.type('123456', { delay: 90 });
   await p.waitForTimeout(6000);

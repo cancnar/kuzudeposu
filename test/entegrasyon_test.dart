@@ -42,6 +42,7 @@ void main() {
     testIstemci = SupabaseClient(supabaseUrl, supabasePublishableKey);
     final olusanFotolar = <String>[];
     String? kendiIlan;
+    var onOnay = false; // 009: yönetici "ön onay"ı açtıysa yeni ilan aramada görünmez (doğru davranış)
     var profilBizim = false;
     try {
       // ---------- Misafir (giriş yok) ----------
@@ -168,6 +169,8 @@ void main() {
             'amac': 'kurbanlik', 'belgeler': ['kupe', 'saglik_raporu'], 'pazarlik': true, 'teslimat': 'ikisi',
           }, [FotoDosya(png, 'a.png', 'image/png'), FotoDosya(png, 'b.png', 'image/png'), FotoDosya(png, 'c.png', 'image/png')]);
           kendiIlan = id;
+          onOnay = await ilanOnayBekliyor(id);
+          if (onOnay) sonuc.add('   bilgi: ön onay modu açık; ilan onay bekliyor, arama adımları buna göre denetleniyor');
           final i = await ilanGetir(id);
           sart(i != null && i.foto.length == 3, 'fotoğraf sayısı: ${i?.foto.length}');
           sart(i!.kgFiyat == 400, 'kg fiyatı ${i.kgFiyat} (400 bekleniyordu)');
@@ -180,14 +183,18 @@ void main() {
         await adim('ilanlarım + aramada görünme', () async {
           final m = await benimIlanlarim();
           sart(m.any((i) => i.id == kendiIlan), 'ilanlarım listesinde yok');
-          final a = await ilanAra('CI test'.isEmpty ? '' : '', Filtre({'il': 'Salihli'}));
-          sart(a.any((i) => i.id == kendiIlan), 'aramada görünmüyor');
+          final a = await ilanAra('', Filtre({'il': 'Salihli'}));
+          if (onOnay) {
+            sart(!a.any((i) => i.id == kendiIlan), 'onay bekleyen ilan aramada görünüyor!');
+          } else {
+            sart(a.any((i) => i.id == kendiIlan), 'aramada görünmüyor');
+          }
         });
         await adim('yeni alanlar: amaç / belge filtresi, fiyat özeti, görüntülenme, istatistik', () async {
           final i = await ilanGetir(kendiIlan!);
           sart(i!.amac == 'kurbanlik' && i.pazarlik && i.teslimat == 'ikisi' && i.belgeler.length == 2, 'yeni alanlar okunamadı');
           final a = await ilanAra('', Filtre({'amac': 'Kurbanlık', 'belgeler': 'kupe,saglik_raporu'}));
-          sart(a.any((x) => x.id == kendiIlan), 'amaç + belge filtresiyle bulunamadı');
+          if (!onOnay) sart(a.any((x) => x.id == kendiIlan), 'amaç + belge filtresiyle bulunamadı');
           final b = await ilanAra('', Filtre({'amac': 'Besilik'}));
           sart(!b.any((x) => x.id == kendiIlan), 'yanlış amaçta göründü');
           final o = await fiyatOzeti(i);
@@ -338,9 +345,10 @@ void main() {
           final p = await db.from('profiles').select('askida').eq('id', uid!).single();
           sart(p['askida'] == false, 'kullanıcı kendi askida alanını değiştirebildi');
           if (kendiIlan != null) {
-            await db.from('listings').update({'moderasyon': 'onay_bekliyor'}).eq('id', kendiIlan!);
+            final once = (await db.from('listings').select('moderasyon').eq('id', kendiIlan!).single())['moderasyon'];
+            await db.from('listings').update({'moderasyon': 'yonetici_gizledi'}).eq('id', kendiIlan!);
             final r = await db.from('listings').select('moderasyon').eq('id', kendiIlan!).single();
-            sart(r['moderasyon'] == null, 'kullanıcı ilanın moderasyon alanını değiştirebildi');
+            sart(r['moderasyon'] == once, 'kullanıcı ilanın moderasyon alanını değiştirebildi');
           }
         });
       }

@@ -24,6 +24,8 @@ Future<void> ac(WidgetTester t, Widget ekran, {double genislik = 390, double yuk
 }
 
 Future<void> dokun(WidgetTester t, Finder f) async {
+  // Tembel listede henüz çizilmemiş öğeye kaydırarak ulaş.
+  if (f.evaluate().isEmpty) await t.scrollUntilVisible(f, 200, scrollable: find.byType(Scrollable).first);
   await t.ensureVisible(f);
   await t.pump();
   await t.tap(f);
@@ -98,7 +100,7 @@ void main() {
       expect(find.text('Hayvan türünü seç.'), findsOneWidget);
       await dokun(t, find.text('Küçükbaş'));
       await dokun(t, find.text('Devam'));
-      expect(find.text('Cinsi seç.'), findsOneWidget);
+      expect(find.text('Cinsi seç.', skipOffstage: false), findsOneWidget);
       await dokun(t, find.text('Kıvırcık'));
       await dokun(t, find.text('Devam'));
       expect(find.text('Adım 2/4 · Yaş, ağırlık ve fiyat'), findsOneWidget);
