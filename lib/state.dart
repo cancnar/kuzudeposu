@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +13,7 @@ class AppState extends ChangeNotifier {
   bool profilHazir = false;
   String? profilHata;
   bool misafir = false;
+  bool yonetici = false;
   Set<String> favoriler = {};
   int okunmamisBildirim = 0;
   int okunmamisMesaj = 0;
@@ -35,6 +37,33 @@ class AppState extends ChangeNotifier {
   String? _uid;
   Timer? _sayac;
   SharedPreferences? _p;
+  String? _cihaz;
+
+  /// Kullanım sayımı için rastgele, kişisel bilgi içermeyen cihaz kimliği (bir kez üretilir, cihazda saklanır).
+  String get cihazKimligi {
+    if (_cihaz != null) return _cihaz!;
+    var k = _p?.getString('cihaz');
+    if (k == null) {
+      final r = Random.secure();
+      k = List.generate(16, (_) => r.nextInt(256).toRadixString(16).padLeft(2, '0')).join();
+      _p?.setString('cihaz', k);
+    }
+    return _cihaz = k;
+  }
+
+  static String get platformAdi => kIsWeb
+      ? 'web'
+      : switch (defaultTargetPlatform) {
+          TargetPlatform.iOS => 'ios',
+          TargetPlatform.android => 'android',
+          _ => 'diger',
+        };
+
+  /// Yerel/CI açılışları (localhost: ekran görüntüsü robotu, geliştirme) sayılmaz.
+  void ziyaretBildir() {
+    if (kIsWeb && const {'localhost', '127.0.0.1'}.contains(Uri.base.host)) return;
+    ziyaretKaydet(cihazKimligi, platformAdi);
+  }
 
   double get yaziOlcek => switch (yazi) {
         'Büyük' => 1.12,
@@ -73,6 +102,7 @@ class AppState extends ChangeNotifier {
       favoriler = {};
       okunmamisBildirim = 0;
       okunmamisMesaj = 0;
+      yonetici = false;
       sekme = 0;
       _sayac?.cancel();
       notifyListeners();
@@ -91,6 +121,8 @@ class AppState extends ChangeNotifier {
       profil = await db.from('profiles').select().eq('id', uid!).maybeSingle();
       if (profil != null) {
         favoriler = await favoriIdleri();
+        yonetici = await yoneticiMi();
+        ziyaretBildir();
         await sayaclariYenile();
         _sayac?.cancel();
         _sayac = Timer.periodic(const Duration(seconds: 30), (_) => sayaclariYenile());

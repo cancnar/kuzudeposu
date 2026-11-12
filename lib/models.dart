@@ -397,3 +397,36 @@ class Talep {
     );
   }
 }
+
+/// Yönetici paneli sayıları (yonetici_ozet RPC'sinin döndürdüğü JSON).
+class YoneticiOzet {
+  YoneticiOzet(this.ham);
+  final Map<String, dynamic> ham;
+
+  Map<String, dynamic> _grup(String g) => (ham[g] as Map?)?.cast<String, dynamic>() ?? const {};
+
+  /// Örn. n('ilanlar', 'aktif')
+  int n(String grup, String alan) => ((_grup(grup)[alan] as num?) ?? 0).toInt();
+
+  /// Örn. dagilim('ilanlar', 'tur') → {'kucukbas': 3}
+  Map<String, int> dagilim(String grup, String alan) =>
+      ((_grup(grup)[alan] as Map?) ?? const {}).map((k, v) => MapEntry('$k', (v as num).toInt()));
+
+  List<({String il, int n})> get iller => [
+        for (final e in ((_grup('ilanlar')['il'] as List?) ?? const []))
+          (il: '${(e as Map)['il']}', n: ((e['n'] as num?) ?? 0).toInt()),
+      ];
+
+  /// Son 14 gün: tarih + cihaz/üye/ilan sayıları (eskiden yeniye).
+  List<({DateTime gun, int cihaz, int uye, int ilan})> get gunluk => [
+        for (final e in ((ham['gunluk'] as List?) ?? const []))
+          (
+            gun: DateTime.parse('${(e as Map)['gun']}'),
+            cihaz: ((e['cihaz'] as num?) ?? 0).toInt(),
+            uye: ((e['uye'] as num?) ?? 0).toInt(),
+            ilan: ((e['ilan'] as num?) ?? 0).toInt(),
+          ),
+      ];
+
+  DateTime? get olusturma => DateTime.tryParse('${ham['olusturma']}')?.toLocal();
+}

@@ -11,7 +11,8 @@ Türkiye için canlı hayvan (öncelik kuzu/küçükbaş, ayrıca büyükbaş, a
 - Commit mesajları Türkçe; sonunda Co-Authored-By / Claude-Session satırları.
 - tool/ekran.js ve testler metinlere dayanır; bu metinler/öğeler DEĞİŞTİRİLMEZ (değişirse ekran.js de güncellenir): "Giriş yapmadan ilanlara göz at", "Telefon numaram ile devam et", "İlanlar", "Alıcı talepleri", filtre butonu tooltip'i "Filtre", "Temizle", "ilanı göster", "Telefon numaram ile giriş yap", "Kodu gönder", "Doğrula", "Başla", "Hayvan satıyorum", "Hayvan arıyorum", "İlanlarım", "Ayarlar", "Kayıtlı aramalarım", "Satın almadan önce kontrol et", ilan kartında "Video", talep kartında "İlanımı öner"/"Talebi kapat", galeri "1/3" sayacı ve "Sonraki fotoğraf"/"Kapat" tooltip'leri. Alt menünün ortası (x=195) "+" menüsünü açar; ilk ilan kartı y≈380'de olmalı.
 - SQL'i kullanıcı Supabase SQL Editor'de elle çalıştırır. Claude gizli anahtar tutmaz. Sadece publishable key (sb_publishable_...) kullanılır; `sb_secret_` / `service_role` asla istenmez veya paylaşılmaz.
-- SQL sırası: schema, 002, 003_satici_profili, seed_satici_gecmisi, 004_ozellikler, seed_004_ozellikler, 005_guvenlik, 006_talepler, 007_video. 007 dahil hepsi çalışıyor (8 Kasım 2026 CI'ında canlı video yükleme testi geçti).
+- SQL sırası: schema, 002, 003_satici_profili, seed_satici_gecmisi, 004_ozellikler, seed_004_ozellikler, 005_guvenlik, 006_talepler, 007_video, 008_yonetici. 007 dahil hepsi çalışıyor (8 Kasım 2026 CI'ında canlı video yükleme testi geçti). 008 (12 Kasım) kullanıcı tarafından henüz çalıştırılmadıysa entegrasyon testi o adımı atlar.
+- SQL'i göndermeden önce sandbox'ta yerel PostgreSQL 16 ile dene: /usr/lib/postgresql/16/bin/initdb (postgres kullanıcısıyla), /tmp/pgstub.sql benzeri sahte auth/storage şeması + auth.uid() = current_setting('test.uid'), sonra tüm dosyaları sırayla çalıştır.
 - Test hesabı: +905559999999, OTP 123456.
 - Kullanıcı araştırmayı döngüyle ister (araştır, güncelle, tekrar araştır, bitince cevap ver). Uzun çıktılar Claude Docs olarak yazılır.
 - Görsel üretimde (logo, çizim) yayınlamadan önce SVG'yi `rsvg-convert` ile PNG'ye çevirip kendin bak; görmeden yayınlama. Tasarım seçenekleri "Design" artifact tuvallerinde sunulur.
@@ -39,6 +40,8 @@ Türkiye için canlı hayvan (öncelik kuzu/küçükbaş, ayrıca büyükbaş, a
 - 006: alıcı talepleri (wanted_ads), eşleşen satıcılara bildirim, talebe ilan önerme RPC. "+" menüsü: Hayvan satıyorum / Hayvan arıyorum; ana ekranda İlanlar / Alıcı talepleri sekmeleri.
 - 007: ilana video (60 sn, 50 MB, bucket listing-videos), lib/video.dart oynatıcı.
 - 8 Kasım 2026 yeni tasarım (kod): gölgeli kartlar, büyük fotoğraflı ilan kartı + Küpeli rozeti, kayan sekme, ikonlu filtre, detayda yüzen butonlar + fotoğraf üstünde video + fiyat aralığı çubuğu + tek "Bilgiler" listesi, yeni alt menü / + menüsü / karşılama / profil; HIG hareket düzeltmeleri ve "Hareketi azalt".
+- 008 yönetici paneli (12 Kasım 2026): `admins` tablosu (RLS, politika yok; sadece security definer fonksiyonlar okur), `yonetici_mi()`, `yonetici_ozet()` (yönetici değilse 'yetki yok' hatası), `app_visits` + `ziyaret_kaydet(cihaz, platform)` (anonim cihaz kimliği, günde 1 kayıt, misafirler dahil; localhost açılışları sayılmaz), `ornek_hesap(uuid)` (aaaaaaaa-/cccccccc- örnek hesaplar tüm sayılardan hariç). Uygulama: lib/screens/admin_screen.dart (YoneticiScreen; Kullanım/Üyeler/İlanlar/Etkileşim kartları, son 14 gün grafiği, tür/il/rol oranları), Profil'de sadece yöneticiye "Yönetici paneli" satırı (app.yonetici). Yerel önizleme: localhost/?onizleme=yonetici örnek veriyle (ekran.js yonetici_1..5 görüntüleri). Yönetici eklemek: `insert into public.admins (user_id) select id from auth.users where phone = '905XXXXXXXXX';` Test numarası ASLA yönetici yapılmaz (kodu depoda açık).
+- Claude Docs: "Kuzu Deposu – Reklam Planı 2027" (8 Kasım; TikTok canlı hayvan reklamını yasaklıyor, Meta P2P hayvan satışı reklamını yasaklıyor → Google ağırlıklı plan).
 - Claude Docs: "Pazar Araştırması Güncellemesi", "Türkiye Rakip Analizi" (potansiyel müşteri bölümü dahil), "Uygulama İsim Önerileri".
 
 ## Rakip analizi özeti
@@ -52,6 +55,6 @@ Türkiye'de baskın, güven odaklı, hayvana özel mobil pazar yeri yok. Yerli: 
 5. KVKK aydınlatma metni ve kullanım şartları (yer tutucu); mağaza metinleri, gizlilik politikası.
 6. Avukat görüşü: canlı hayvanın online satışı, Canlı Hayvan Ticareti Satıcıları yönetmeliği.
 7. Push bildirim (FCM), harita/yakınlık sıralaması, video dönüştürme (iPhone .mov uyumu).
-8. Moderasyon paneli, ilk ilanlar için tohum içerik stratejisi, kapora/ödeme koruması fikri.
+8. Moderasyon (yönetici panelinde şikâyet listesi + ilan gizle/aç, kullanıcı engelle), ilk ilanlar için tohum içerik stratejisi, kapora/ödeme koruması fikri.
 9. Depo herkese açık (kullanıcı özel istedi, ama Pages özel depoda ücretli). Apple/Google geliştirici hesapları. iPhone gerçek cihaz testi.
 10. İsteğe bağlı: hig-doctor-audit ile Flutter kod taraması (`npx -y hig-doctor@2.0.3 . --json`); analizdeki deprecated uyarıları (value→initialValue, activeColor→activeThumbColor, anonKey→publishableKey).

@@ -124,6 +124,12 @@ async function geri(p) {
   await tikla(p, 'İlanlarım', 2500); await snap(p, 'ilanlarim'); await geri(p);
   await tikla(p, 'Ayarlar', 2500); await snap(p, 'ayarlar'); await geri(p);
   await tikla(p, 'Kayıtlı aramalarım', 2500); await snap(p, 'kayitli_aramalar'); await geri(p);
+  // --- Yönetici paneli (yerel önizleme, örnek veri) ---
+  const y = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  await y.goto('http://localhost:8080/kuzudeposu/?onizleme=yonetici', { timeout: 60000 });
+  await y.waitForTimeout(8000);
+  await snap(y, 'yonetici_1');
+  for (let k = 2; k <= 5; k++) { await kaydir(y, 700); await snap(y, 'yonetici_' + k); }
   log.push('SON ' + urlSonrasi.replace(/\n/g, ' '));
   fs.writeFileSync(`${out}/log.txt`, log.join('\n'));
   await b.close();

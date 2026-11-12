@@ -5,6 +5,7 @@ import '../models.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'admin_screen.dart';
 import 'detail_screen.dart';
 import 'settings_screens.dart';
 import 'shell.dart';
@@ -89,6 +90,10 @@ class ProfileScreen extends StatelessWidget {
           }),
           Satir('Kayıtlı aramalarım', ikon: Icons.bookmark_border, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SavedSearchesScreen()))),
         ]),
+        if (app.yonetici)
+          Bolum('', [
+            Satir('Yönetici paneli', ikon: Icons.insights_outlined, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const YoneticiScreen()))),
+          ]),
         Bolum('', [
           Satir('Ayarlar', ikon: Icons.settings_outlined, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()))),
           Satir('Yardım ve destek', ikon: Icons.help_outline, onTap: () => bildir(context, 'Yardım sayfası yayın öncesi eklenecek')),

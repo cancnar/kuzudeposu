@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kuzu_deposu/galeri.dart';
 import 'package:kuzu_deposu/models.dart';
 import 'package:kuzu_deposu/rehber.dart';
+import 'package:kuzu_deposu/screens/admin_screen.dart';
 import 'package:kuzu_deposu/screens/satici_screen.dart';
 import 'package:kuzu_deposu/screens/talepler_screen.dart';
 import 'package:kuzu_deposu/theme.dart';
@@ -44,6 +45,51 @@ void main() {
     expect(ornek().kgFiyat, (1740000 / 420).round());
     expect(ornek(adet: 12).yasMetni, '12–24 ay');
     expect(ornek().yasMetni, '12 ay');
+  });
+
+  test('yönetici özeti okunur', () {
+    final o = YoneticiOzet(onizlemeOzeti);
+    expect(o.n('kullanim', 'toplam_cihaz'), 1250);
+    expect(o.n('ilanlar', 'aktif'), 87);
+    expect(o.n('yok', 'yok'), 0);
+    expect(o.dagilim('ilanlar', 'tur')['kucukbas'], 60);
+    expect(o.iller.first.il, 'Manisa');
+    expect(o.gunluk.length, 14);
+    expect(o.gunluk.last.cihaz, 140);
+  });
+
+  for (final genislik in [320.0, 390.0, 700.0]) {
+    for (final olcek in [1.0, 1.25]) {
+      testWidgets('yönetici paneli çizilir, taşmaz ($genislik px, yazı $olcek)', (t) async {
+        t.view.physicalSize = ui.Size(genislik, 2600);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.reset);
+        await t.pumpWidget(MaterialApp(
+          theme: kuzuTema(),
+          builder: (c, w) => MediaQuery(data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(olcek)), child: w!),
+          home: YoneticiScreen(yukle: () async => YoneticiOzet(onizlemeOzeti)),
+        ));
+        await t.pumpAndSettle();
+        expect(t.takeException(), isNull);
+        expect(find.text('Yönetici paneli'), findsOneWidget);
+        expect(find.text('Uygulamayı kullanan'), findsOneWidget);
+        expect(find.text('1.250'), findsOneWidget);
+        expect(find.text('Aktif ilan'), findsOneWidget);
+        expect(find.text('3 şikâyet inceleme bekliyor'), findsOneWidget);
+        await t.tap(find.text('Yeni ilan'));
+        await t.pump();
+        expect(t.takeException(), isNull);
+      });
+    }
+  }
+
+  testWidgets('yönetici paneli: yetkisiz kullanıcıya uyarı', (t) async {
+    await t.pumpWidget(MaterialApp(
+      theme: kuzuTema(),
+      home: YoneticiScreen(yukle: () async => throw Exception('yetki yok: bu bilgiler sadece yöneticiye açık')),
+    ));
+    await t.pumpAndSettle();
+    expect(find.text('Bu sayfa sadece yöneticilere açık.'), findsOneWidget);
   });
 
   test('filtre → rpc parametreleri', () {

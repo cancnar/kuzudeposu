@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
 import 'data.dart';
+import 'models.dart';
+import 'screens/admin_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'screens/shell.dart';
 import 'screens/welcome_screen.dart';
@@ -16,6 +19,7 @@ Future<void> main() async {
   await app.baslat();
   db.auth.onAuthStateChange.listen((d) => app.oturumDegisti(d.session));
   app.oturumDegisti(db.auth.currentSession);
+  app.ziyaretBildir();
   runApp(const KuzuDeposuApp());
 }
 
@@ -39,7 +43,7 @@ class KuzuDeposuApp extends StatelessWidget {
           child: child!,
         ),
       ),
-      home: const Kok(),
+      home: _onizleme() ?? const Kok(),
     );
   }
 }
@@ -64,4 +68,11 @@ class Kok extends StatelessWidget {
       },
     );
   }
+}
+
+/// Sadece yerelde (ekran görüntüsü robotu): yönetici panelini ÖRNEK veriyle gösterir. Yayındaki sitede çalışmaz.
+Widget? _onizleme() {
+  if (!kIsWeb || !const {'localhost', '127.0.0.1'}.contains(Uri.base.host)) return null;
+  if (Uri.base.queryParameters['onizleme'] != 'yonetici') return null;
+  return YoneticiScreen(yukle: () async => YoneticiOzet(onizlemeOzeti));
 }

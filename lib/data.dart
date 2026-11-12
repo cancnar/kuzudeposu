@@ -338,3 +338,26 @@ Future<String> talebeIlanOner(String talepId, String ilanId) async {
   final r = await db.rpc('talebe_ilan_oner', params: {'p_talep': talepId, 'p_ilan': ilanId});
   return r as String;
 }
+
+// ============ YÖNETİCİ PANELİ (008_yonetici.sql) ============
+
+/// Uygulamanın her açılışında anonim cihaz kimliğiyle günlük kullanım sayar. Hata olursa sessiz geçer.
+Future<void> ziyaretKaydet(String cihaz, String platform) async {
+  try {
+    await db.rpc('ziyaret_kaydet', params: {'p_cihaz': cihaz, 'p_platform': platform});
+  } catch (_) {}
+}
+
+/// Giriş yapan kullanıcı yönetici mi? (008 çalıştırılmadıysa false)
+Future<bool> yoneticiMi() async {
+  try {
+    return (await db.rpc('yonetici_mi')) == true;
+  } catch (_) {
+    return false;
+  }
+}
+
+Future<YoneticiOzet> yoneticiOzet() async {
+  final r = await db.rpc('yonetici_ozet');
+  return YoneticiOzet(Map<String, dynamic>.from(r as Map));
+}

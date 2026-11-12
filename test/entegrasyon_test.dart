@@ -292,6 +292,28 @@ void main() {
           await bildirimler();
           await hepsiniOkundu();
         });
+        await adim('yönetici paneli: test hesabı yönetici değil, özet kapalı (008)', () async {
+          try {
+            await db.rpc('yonetici_mi');
+          } on PostgrestException catch (e) {
+            if (e.code == 'PGRST202' || e.message.contains('Could not find')) {
+              sonuc.add('   bilgi: 008_yonetici.sql henüz çalıştırılmamış, adım atlandı');
+              return;
+            }
+            rethrow;
+          }
+          sart(!(await yoneticiMi()), 'test hesabı yönetici olmamalı (test kodu herkese açık)');
+          var acik = true;
+          try {
+            await yoneticiOzet();
+          } catch (e) {
+            acik = false;
+            sart('$e'.contains('yetki'), 'beklenmeyen hata: $e');
+          }
+          sart(!acik, 'yönetici olmayan kullanıcı panel verisini okuyabildi!');
+          final tablo = await db.from('admins').select().then((r) => r.length).catchError((_) => -1);
+          sart(tablo <= 0, 'admins tablosu uygulamadan okunabiliyor');
+        });
       }
     } finally {
       await adim('temizlik: fotoğrafları sil', () async {
