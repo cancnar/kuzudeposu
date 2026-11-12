@@ -24,7 +24,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (db.auth.currentSession != null) _f = favoriIlanlar();
   }
 
-  void _yenile() => setState(() => _f = favoriIlanlar());
+  void _yenile() => setState(() { _f = favoriIlanlar(); });
 
   @override
   Widget build(BuildContext context) {

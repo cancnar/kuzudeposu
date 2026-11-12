@@ -45,7 +45,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     } else if (d['listing_id'] != null) {
       await Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetailScreen(ilanId: d['listing_id'] as String)));
     }
-    if (mounted) setState(() => _f = bildirimler());
+    if (mounted) setState(() { _f = bildirimler(); });
   }
 
   @override
@@ -59,7 +59,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               try {
                 await hepsiniOkundu();
                 app.sayaclariYenile();
-                setState(() => _f = bildirimler());
+                setState(() { _f = bildirimler(); });
               } catch (e) {
                 if (mounted) bildir(context, 'İşlem yapılamadı: $e');
               }
@@ -72,7 +72,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         future: _f,
         builder: (context, s) {
           if (s.connectionState != ConnectionState.done) return yukleniyor();
-          if (s.hasError) return HataKutusu(s.error!, tekrar: () => setState(() => _f = bildirimler()));
+          if (s.hasError) return HataKutusu(s.error!, tekrar: () => setState(() { _f = bildirimler(); }));
           final liste = s.data!;
           return ListView(
             children: [

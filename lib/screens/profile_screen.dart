@@ -144,7 +144,7 @@ class _MineScreenState extends State<MineScreen> {
         future: _f,
         builder: (context, s) {
           if (s.connectionState != ConnectionState.done) return yukleniyor();
-          if (s.hasError) return HataKutusu(s.error!, tekrar: () => setState(() => _f = benimIlanlarim()));
+          if (s.hasError) return HataKutusu(s.error!, tekrar: () => setState(() { _f = benimIlanlarim(); }));
           final l = s.data!;
           if (l.isEmpty) return const Center(child: Text('Henüz ilan vermedin. Ortadaki + butonuna dokun.', style: TextStyle(color: Renk.soluk)));
           return ListView(
@@ -158,7 +158,7 @@ class _MineScreenState extends State<MineScreen> {
                   onFavori: () => bildir(context, 'Kendi ilanını favoriye ekleyemezsin'),
                   onTap: () async {
                     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetailScreen(ilan: i)));
-                    if (mounted) setState(() => _f = benimIlanlarim());
+                    if (mounted) setState(() { _f = benimIlanlarim(); });
                   },
                 ),
             ],

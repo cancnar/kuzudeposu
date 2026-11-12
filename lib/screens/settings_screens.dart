@@ -182,7 +182,7 @@ class _BlockedScreenState extends State<BlockedScreen> {
                   trailing: TextButton(
                     onPressed: () async {
                       await engelKaldir(b['blocked_id'] as String);
-                      setState(() => _f = engellenenler());
+                      setState(() { _f = engellenenler(); });
                     },
                     child: const Text('Engeli kaldır'),
                   ),
@@ -205,7 +205,7 @@ class SavedSearchesScreen extends StatefulWidget {
 class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
   late Future<List<Map<String, dynamic>>> _f = kayitliAramalar();
 
-  void _yenile() => setState(() => _f = kayitliAramalar());
+  void _yenile() => setState(() { _f = kayitliAramalar(); });
 
   @override
   Widget build(BuildContext context) {

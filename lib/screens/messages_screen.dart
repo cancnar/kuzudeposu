@@ -26,7 +26,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   void _yenile() {
-    setState(() => _f = konusmalar());
+    setState(() { _f = konusmalar(); });
     app.sayaclariYenile();
   }
 

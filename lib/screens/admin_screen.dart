@@ -25,7 +25,7 @@ class _YoneticiScreenState extends State<YoneticiScreen> {
 
   Future<void> _yenile() async {
     final f = _getir();
-    setState(() => _f = f);
+    setState(() { _f = f; });
     await f.catchError((_) => YoneticiOzet(const {}));
   }
 

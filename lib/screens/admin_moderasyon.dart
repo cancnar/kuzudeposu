@@ -261,7 +261,7 @@ class _YoneticiIlanlarScreenState extends State<YoneticiIlanlarScreen> {
   final _ara = TextEditingController();
   late Future<List<YIlan>> _f = _getir();
   Future<List<YIlan>> _getir() => yonetim.ilanlar(widget.filtre, ara: _ara.text.trim());
-  void _yenile() => setState(() => _f = _getir());
+  void _yenile() => setState(() { _f = _getir(); });
 
   @override
   Widget build(BuildContext context) {
@@ -329,7 +329,7 @@ class _SikayetlerScreenState extends State<SikayetlerScreen> {
   static const _durumlar = {'yeni': 'Yeni', 'inceleniyor': 'İnceleniyor', 'kapandi': 'Kapandı'};
   String _durum = 'yeni';
   late Future<List<YSikayet>> _f = yonetim.sikayetler(_durum);
-  void _yenile() => setState(() => _f = yonetim.sikayetler(_durum));
+  void _yenile() => setState(() { _f = yonetim.sikayetler(_durum); });
 
   Future<void> _durumDegistir(YSikayet s, String d, String mesaj) async {
     if (await _yap(context, () => yonetim.sikayetDurum(s.id, d), mesaj)) _yenile();
@@ -441,7 +441,7 @@ class _KullanicilarScreenState extends State<KullanicilarScreen> {
   late bool _askida = widget.sadeceAskida;
   late Future<List<YKullanici>> _f = _getir();
   Future<List<YKullanici>> _getir() => yonetim.kullanicilar(ara: _ara.text.trim(), sadeceAskida: _askida);
-  void _yenile() => setState(() => _f = _getir());
+  void _yenile() => setState(() { _f = _getir(); });
 
   @override
   Widget build(BuildContext context) {
@@ -559,7 +559,7 @@ class KullaniciScreen extends StatefulWidget {
 
 class _KullaniciScreenState extends State<KullaniciScreen> {
   late Future<YKullanici> _f = yonetim.kullanici(widget.id);
-  void _yenile() => setState(() => _f = yonetim.kullanici(widget.id));
+  void _yenile() => setState(() { _f = yonetim.kullanici(widget.id); });
 
   Future<void> _aski(YKullanici k) async {
     if (k.askida) {
