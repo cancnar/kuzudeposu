@@ -130,7 +130,12 @@ async function geri(p) {
   await y.waitForTimeout(8000);
   await snap(y, 'yonetici_1');
   for (let k = 2; k <= 6; k++) { await kaydir(y, 700); await snap(y, 'yonetici_' + k); }
-  const onizle = async () => { await y.goto('http://localhost:8080/kuzudeposu/?onizleme=yonetici', { timeout: 60000 }); await y.waitForTimeout(7000); };
+  const onizle = async () => {
+    await y.goto('http://localhost:8080/kuzudeposu/?onizleme=yonetici', { timeout: 60000 });
+    await y.waitForTimeout(7000);
+    await y.evaluate(() => document.querySelector('flt-semantics-placeholder')?.click()).catch(() => {});
+    await y.waitForTimeout(1500);
+  };
   await onizle();
   await tikla(y, 'Bekleyen şikâyet', 2500); await snap(y, 'mod_sikayetler');
   await kaydir(y, 700); await snap(y, 'mod_sikayetler_2');
