@@ -18,7 +18,21 @@ Future<void> ac(WidgetTester t, Widget ekran, {double genislik = 390, double yuk
     builder: (c, w) => MediaQuery(data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(olcek)), child: w!),
     home: ekran,
   ));
+  await bitir(t);
+}
+
+/// Örnek kaynak 150 ms gecikmeli yanıt verir; animasyon erken biterse pumpAndSettle beklemeyebilir.
+Future<void> bitir(WidgetTester t) async {
+  await t.pump(const Duration(milliseconds: 400));
   await t.pumpAndSettle();
+}
+
+/// Görünür alana kaydırıp dokunur.
+Future<void> dokun(WidgetTester t, Finder f) async {
+  await t.ensureVisible(f);
+  await t.pump();
+  await t.tap(f);
+  await bitir(t);
 }
 
 void main() {
@@ -63,8 +77,7 @@ void main() {
         expect(find.text('Ön onay modu'), findsOneWidget);
         expect(find.text('Uygulamayı kullanan'), findsOneWidget);
         expect(find.text('1.250'), findsOneWidget);
-        await t.tap(find.text('Yeni ilan'));
-        await t.pump();
+        await dokun(t, find.text('Yeni ilan'));
         expect(t.takeException(), isNull);
       });
     }
@@ -83,20 +96,15 @@ void main() {
 
   testWidgets('şüpheli ilanı gerekçeyle gizle', (t) async {
     await ac(t, const YoneticiScreen());
-    await t.tap(find.text('Şüpheli ilan'));
-    await t.pumpAndSettle();
+    await dokun(t, find.text('Şüpheli ilan'));
     expect(find.text('Şüpheli ilanlar'), findsOneWidget);
     expect(find.text('IBAN'), findsOneWidget);
-    await t.tap(find.text('Holstein düve'));
-    await t.pumpAndSettle();
+    await dokun(t, find.text('Holstein düve'));
     expect(find.text('Kalıcı olarak kaldır'), findsOneWidget);
-    await t.tap(find.text('Yayından gizle'));
-    await t.pumpAndSettle();
+    await dokun(t, find.text('Yayından gizle'));
     expect(find.text('Neden gizleniyor?'), findsOneWidget);
-    await t.tap(find.text('Kapora / ön ödeme istiyor'));
-    await t.pump();
-    await t.tap(find.text('Yayından gizle'));
-    await t.pumpAndSettle();
+    await dokun(t, find.text('Kapora / ön ödeme istiyor'));
+    await dokun(t, find.text('Yayından gizle'));
     expect(find.text('İlan gizlendi, satıcıya bildirildi'), findsOneWidget);
     expect(find.text('Holstein düve'), findsNothing);
     expect(find.text('Akkaraman toklu'), findsOneWidget);
@@ -105,10 +113,8 @@ void main() {
 
   testWidgets('onay bekleyen ilanı onayla', (t) async {
     await ac(t, const YoneticiIlanlarScreen(filtre: 'onay', baslikYazi: 'Onay bekleyenler'));
-    await t.tap(find.text('Kıvırcık kuzu'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Onayla ve yayınla'));
-    await t.pumpAndSettle();
+    await dokun(t, find.text('Kıvırcık kuzu'));
+    await dokun(t, find.text('Onayla ve yayınla'));
     expect(find.text('İlan onaylandı ve yayına çıktı'), findsOneWidget);
     expect(find.text('Liste boş'), findsOneWidget);
   });
@@ -119,21 +125,16 @@ void main() {
       expect(t.takeException(), isNull);
       await t.enterText(find.byType(TextField), '2233');
       await t.testTextInput.receiveAction(TextInputAction.search);
-      await t.pumpAndSettle();
+      await bitir(t);
       expect(find.text('Sabri Kaya'), findsOneWidget);
       expect(find.text('Hatice Demir'), findsOneWidget);
       expect(find.text('Mustafa Koç'), findsNothing);
-      await t.tap(find.text('Sabri Kaya'));
-      await t.pumpAndSettle();
+      await dokun(t, find.text('Sabri Kaya'));
       expect(t.takeException(), isNull);
       expect(find.text('+90 544 222 33 44'), findsOneWidget);
-      await t.scrollUntilVisible(find.text('Hesabı askıya al'), 200, scrollable: find.byType(Scrollable).first);
-      await t.tap(find.text('Hesabı askıya al'));
-      await t.pumpAndSettle();
-      await t.tap(find.text('Kapora istiyor'));
-      await t.pump();
-      await t.tap(find.text('Hesabı askıya al').last);
-      await t.pumpAndSettle();
+      await dokun(t, find.text('Hesabı askıya al'));
+      await dokun(t, find.text('Kapora istiyor'));
+      await dokun(t, find.text('Hesabı askıya al').last);
       expect(find.text('Hesap askıda: Kapora istiyor'), findsOneWidget);
       expect(find.text('Askıyı kaldır'), findsOneWidget);
       expect(t.takeException(), isNull);
@@ -146,12 +147,10 @@ void main() {
       expect(t.takeException(), isNull);
       expect(find.text('Kapora / ön ödeme istiyor'), findsOneWidget);
       expect(find.text('Bu ilanı 2 farklı kişi şikâyet etti'), findsNWidgets(2));
-      await t.tap(find.text('Kapat').first);
-      await t.pumpAndSettle();
+      await dokun(t, find.text('Kapat').first);
       expect(find.text('Şikâyet kapatıldı'), findsOneWidget);
       expect(find.text('Kapora / ön ödeme istiyor'), findsNothing);
-      await t.tap(find.text('İnceleniyor'));
-      await t.pumpAndSettle();
+      await dokun(t, find.text('İnceleniyor'));
       expect(find.text('Sahte ilan'), findsOneWidget);
       expect(t.takeException(), isNull);
     });
