@@ -46,6 +46,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _degisti() {
     if (!mounted) return;
+    // Arama başka yerden sıfırlandıysa (ör. ilan yayınlandıktan sonra) kutudaki metni de eşitle.
+    // Kullanıcı yazarken (gecikmeli arama bekliyorken) dokunma.
+    if (_q.text != app.arama && !(_t?.isActive ?? false)) _q.text = app.arama;
     if (_simdi != _imza) {
       _yukle();
     } else {

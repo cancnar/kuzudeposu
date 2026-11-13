@@ -400,6 +400,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: TextField(
                           controller: _mc,
                           onSubmitted: (_) => _gonder(),
+                          // Klavyeden gönderince alan odakta kalsın: arka arkaya mesaj yazılabilsin.
+                          onEditingComplete: () {},
                           textInputAction: TextInputAction.send,
                           decoration: InputDecoration(
                             hintText: 'Mesaj yaz',

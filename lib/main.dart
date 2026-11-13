@@ -38,6 +38,7 @@ class KuzuDeposuApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scaffoldMessengerKey: mesajAnahtari,
       title: 'Kuzu Deposu',
       debugShowCheckedModeBanner: false,
       theme: kuzuTema(),

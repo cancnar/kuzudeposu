@@ -582,6 +582,14 @@ class _SellScreenState extends State<SellScreen> {
         _hataYazi('foto'),
         ],
         const SizedBox(height: 10),
+        // Düzenlemede fotoğraf değişmediği için yükleme uyarısı yerine sadece metin kuralı gösterilir.
+        if (_duzenleme)
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Renk.kupe, borderRadius: BorderRadius.circular(10)),
+            child: const Text('Açıklamaya IBAN ve telefon yazma; alıcıdan kapora isteme.', style: TextStyle(fontSize: 13, height: 1.4)),
+          )
+        else
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(color: Renk.kupe, borderRadius: BorderRadius.circular(10)),

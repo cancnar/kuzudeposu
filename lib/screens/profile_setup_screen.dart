@@ -68,9 +68,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         bildir(context, 'Hoş geldin ${ad.split(' ').first}');
       }
     } on PostgrestException catch (e) {
-      setState(() => _hata = 'Kaydedilemedi: ${e.message}');
+      // 23503: oturumdaki hesap sunucuda yok (başka cihazda silinmiş). Teknik hata yerine yeniden giriş iste.
+      if (e.code == '23503' && !widget.duzenle) {
+        await app.oturumuKapat('Oturumun sona erdi. Devam etmek için tekrar giriş yap.');
+        return;
+      }
+      setState(() => _hata = 'Kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
     } catch (e) {
-      setState(() => _hata = 'Bir sorun oluştu: $e');
+      setState(() => _hata = 'Bir sorun oluştu. Bağlantını kontrol edip tekrar dene.');
     } finally {
       if (mounted) setState(() => _yukleniyor = false);
     }

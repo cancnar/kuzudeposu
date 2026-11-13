@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'data.dart';
 import 'models.dart';
+
+/// Sayfadan bağımsız bildirim (ör. oturum kapatılınca karşılama ekranında göstermek için).
+final mesajAnahtari = GlobalKey<ScaffoldMessengerState>();
 
 class AppState extends ChangeNotifier {
   Map<String, dynamic>? profil;
@@ -125,6 +128,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       profil = await db.from('profiles').select().eq('id', uid!).maybeSingle();
+      if (profil == null && !await hesapVarMi()) {
+        // Hesap başka bir cihazda silinmiş ama bu tarayıcıdaki oturum açık kalmış.
+        profilHazir = true;
+        await oturumuKapat('Oturumun sona erdi. Devam etmek için tekrar giriş yap.');
+        notifyListeners();
+        return;
+      }
       if (profil != null) {
         favoriler = await favoriIdleri();
         yonetici = await yoneticiMi();
@@ -138,6 +148,33 @@ class AppState extends ChangeNotifier {
     }
     profilHazir = true;
     notifyListeners();
+  }
+
+  /// Oturumdaki kullanıcı sunucuda hâlâ var mı? Ağ hatasında var sayılır (yanlışlıkla çıkış yapılmasın).
+  Future<bool> hesapVarMi() async {
+    try {
+      await db.auth.getUser();
+      return true;
+    } on AuthException catch (e) {
+      final m = e.message.toLowerCase();
+      return !(e.statusCode == '403' || e.statusCode == '404' || m.contains('not exist') || m.contains('not found'));
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Oturumu kapatır ve karşılama ekranında açıklama gösterir.
+  Future<void> oturumuKapat(String mesaj) async {
+    misafir = false;
+    try {
+      await db.auth.signOut();
+    } catch (_) {
+      // Sunucu oturumu zaten tanımıyorsa yerelde kapat.
+      await db.auth.signOut(scope: SignOutScope.local);
+    }
+    mesajAnahtari.currentState
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(mesaj), behavior: SnackBarBehavior.floating, duration: const Duration(seconds: 5)));
   }
 
   Future<void> sayaclariYenile() async {
