@@ -165,13 +165,13 @@ void main() {
     await dokun(t, find.text('Devam'));
     expect(find.text('Salihli, Manisa', skipOffstage: false), findsOneWidget);
     await dokun(t, find.text('Devam'));
-    expect(find.text('Değişiklikleri kaydet'), findsOneWidget);
+    expect(find.text('Kaydet'), findsOneWidget);
     expect(find.textContaining('En az 3 fotoğraf'), findsNothing);
     final acik = find.widgetWithText(TextField, 'Açıklama (isteğe bağlı)');
     await t.scrollUntilVisible(acik, 200, scrollable: find.byType(Scrollable).first);
     await t.pumpAndSettle();
     await t.enterText(acik, 'Aramak için 0555 111 22 33');
-    await dokun(t, find.text('Değişiklikleri kaydet'));
+    await dokun(t, find.text('Kaydet'));
     expect(find.textContaining('telefon numarası veya IBAN yazma', skipOffstage: false), findsOneWidget);
     expect(t.takeException(), isNull);
   });

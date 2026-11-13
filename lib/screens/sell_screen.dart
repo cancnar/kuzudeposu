@@ -707,7 +707,7 @@ class _SellScreenState extends State<SellScreen> {
                     onPressed: _yukleniyor ? null : _devam,
                     child: _yukleniyor
                         ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(_adim == 3 ? (_duzenleme ? 'Değişiklikleri kaydet' : 'İlanı yayınla') : 'Devam'),
+                        : Text(_adim == 3 ? (_duzenleme ? 'Kaydet' : 'İlanı yayınla') : 'Devam'),
                   ),
                 ),
               ),
