@@ -90,12 +90,12 @@ void main() {
       await adim('misafir: eş anlamlı arama ve il + mesafe (011)', () async {
         final k = await ilanAra('koyun', Filtre());
         if (k.isEmpty) {
-          sonuc.add('   bilgi: "koyun" sonuç vermedi; 011 çalıştırılmamış olabilir');
+          sonuc.add('   bilgi: "koyun" sonuç vermedi; 011 çalıştırılmamış, eş anlamlı ve kelime başı kontrolleri atlandı');
         } else {
           sart(k.every((i) => i.tur == 'kucukbas' && !i.cins.toLowerCase().contains('keçi')), '"koyun" araması küçükbaş koyun dışı ilan getirdi');
+          final b = await ilanAra('inek', Filtre());
+          sart(b.every((i) => i.tur == 'buyukbas'), '"inek" araması büyükbaş dışı ilan getirdi (ör. "binek")');
         }
-        final b = await ilanAra('inek', Filtre());
-        sart(b.every((i) => i.tur == 'buyukbas'), '"inek" araması büyükbaş dışı ilan getirdi (ör. "binek")');
         final sadece = await ilanAra('', Filtre({'il': 'Manisa'}));
         final yaricap = await ilanAra('', Filtre({'il': 'Manisa', 'mesafe': '100'}));
         final eksik = sadece.where((i) => !yaricap.any((y) => y.id == i.id)).map((i) => i.ilce).toList();
