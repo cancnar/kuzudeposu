@@ -645,7 +645,7 @@ class _SellScreenState extends State<SellScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Row(children: [
-            Text(_duzenleme ? 'İlanı düzenle' : 'İlan ver'),
+            Flexible(child: Text(_duzenleme ? 'İlanı düzenle' : 'İlan ver', maxLines: 1, overflow: TextOverflow.ellipsis)),
             if (_suru)
               Container(
                 margin: const EdgeInsets.only(left: 10),
