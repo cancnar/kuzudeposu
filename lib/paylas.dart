@@ -21,11 +21,12 @@ String ilanPaylasimMetni(Ilan i) =>
 /// Paylaş alt sayfası: WhatsApp, bağlantıyı kopyala.
 Future<void> ilanPaylas(BuildContext context, Ilan i) {
   final metin = ilanPaylasimMetni(i);
+  var kopyaHata = false;
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Renk.krem,
     sheetAnimationStyle: Hareket.altSayfa(context),
-    builder: (c) => SafeArea(
+    builder: (c) => StatefulBuilder(builder: (c, yenile) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -33,7 +34,7 @@ Future<void> ilanPaylas(BuildContext context, Ilan i) {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: Renk.zemin2, borderRadius: BorderRadius.circular(12)),
-            child: Text(metin, style: const TextStyle(height: 1.4)),
+            child: SelectableText(metin, style: const TextStyle(height: 1.4)),
           ),
           const SizedBox(height: 12),
           Basma(
@@ -52,7 +53,13 @@ Future<void> ilanPaylas(BuildContext context, Ilan i) {
           Basma(
             child: OutlinedButton.icon(
               onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: metin));
+                try {
+                  await Clipboard.setData(ClipboardData(text: metin));
+                } catch (_) {
+                  // Tarayıcı panoya yazmaya izin vermediyse sayfayı kapatma: kullanıcı yukarıdaki metni elle seçebilir.
+                  yenile(() => kopyaHata = true);
+                  return;
+                }
                 if (c.mounted) Navigator.pop(c);
                 if (context.mounted) bildir(context, 'Bağlantı kopyalandı');
               },
@@ -60,8 +67,13 @@ Future<void> ilanPaylas(BuildContext context, Ilan i) {
               label: const Text('Bağlantıyı kopyala'),
             ),
           ),
+          if (kopyaHata)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(4, 10, 4, 0),
+              child: Text('Kopyalanamadı. Yukarıdaki bağlantıyı basılı tutup kopyalayabilirsin.', style: TextStyle(color: Renk.kiremit, fontWeight: FontWeight.w700)),
+            ),
         ]),
       ),
-    ),
+    )),
   );
 }

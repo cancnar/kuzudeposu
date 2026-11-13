@@ -73,6 +73,9 @@ void main() {
     expect(p['p_lat'] as double, closeTo(38.48, .05));
     expect(p.containsKey('p_il'), isFalse);
     expect(f.aktif().single.metin, 'Salihli, Manisa · 50 km');
+    expect(p.containsKey('p_il_veya'), isFalse, reason: 'ilçe seçiliyken sadece yarıçap');
+    final il = Filtre({'il': 'Manisa', 'mesafe': '100'}).rpc('');
+    expect(il['p_il_veya'], 'Manisa', reason: 'sadece il + mesafe: ilin tüm ilçeleri de dahil');
     final g = Filtre({'il': 'manisa'}).rpc('');
     expect(g['p_il'], 'Manisa');
     Filtre.profilKonumu = () => (lat: 39.0, lng: 30.0);
@@ -80,6 +83,16 @@ void main() {
     expect(h['p_sort'], 'en_yakin');
     expect(h['p_lat'], 39.0);
     Filtre.profilKonumu = null;
+  });
+
+  test('açıklamada telefon, IBAN ve kapora yakalanır', () {
+    expect(metinSupheli('Sağlıklı kurbanlık, aşıları tam.'), isEmpty);
+    expect(metinSupheli('Bilgi için 0555 111 22 33 arayın'), contains('Telefon numarası'));
+    expect(metinSupheli('+90 532 123 45 67'), contains('Telefon numarası'));
+    expect(metinSupheli('TR12 0001 2345 6789 0123 4567 89'), ['IBAN']);
+    expect(metinSupheli('KAPORA ile ayırtılır'), ['Kapora / ön ödeme']);
+    expect(metinSupheli('Ön ödeme yok, EFT yok'), ['Kapora / ön ödeme']);
+    expect(metinSupheli('Yaş 24 ay, 520 kg'), isEmpty);
   });
 
   test('telefon biçimi ve teklif mesajı', () {
@@ -137,6 +150,30 @@ void main() {
       expect(t.takeException(), isNull);
     });
   }
+
+  testWidgets('ilan düzenleme: alanlar dolu gelir, açıklamadaki telefon engellenir', (t) async {
+    final i = Ilan.json({
+      'id': 'x1', 'seller_id': 's1', 'tur': 'kucukbas', 'cins': 'Kıvırcık', 'cinsiyet': 'erkek', 'adet': 1, 'yas_min': 12, 'yas_max': 12,
+      'agirlik_kg': 48, 'toplam_fiyat': 19500, 'il': 'Manisa', 'ilce': 'Salihli', 'aciklama': 'Sağlıklı kurbanlık.',
+      'created_at': '2026-11-12T10:00:00Z', 'moderasyon': 'onay_bekliyor', 'durum': 'pasif',
+    });
+    await ac(t, SellScreen(duzenle: i), genislik: 320, yukseklik: 760, olcek: 1.25);
+    expect(find.text('İlanı düzenle'), findsOneWidget);
+    await dokun(t, find.text('Devam'));
+    expect(find.text('Adım 2/4 · Yaş, ağırlık ve fiyat'), findsOneWidget);
+    expect(find.text('19500', skipOffstage: false), findsOneWidget);
+    await dokun(t, find.text('Devam'));
+    expect(find.text('Salihli, Manisa', skipOffstage: false), findsOneWidget);
+    await dokun(t, find.text('Devam'));
+    expect(find.text('Değişiklikleri kaydet'), findsOneWidget);
+    expect(find.textContaining('En az 3 fotoğraf'), findsNothing);
+    final acik = find.byType(TextField, skipOffstage: false).last;
+    await t.ensureVisible(acik);
+    await t.enterText(acik, 'Aramak için 0555 111 22 33');
+    await dokun(t, find.text('Değişiklikleri kaydet'));
+    expect(find.textContaining('telefon numarası veya IBAN yazma', skipOffstage: false), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
 
   testWidgets('il seçici: arama ve "Tüm il" seçeneği', (t) async {
     ({String il, String? ilce})? sonuc;

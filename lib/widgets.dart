@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'data.dart' show uidVarsa;
 import 'models.dart';
 import 'theme.dart';
 
@@ -303,7 +304,8 @@ class IlanKarti extends StatelessWidget {
                               yaziRenk: Colors.white,
                             ),
                           ),
-                        if (kalp)
+                        // Kendi ilanını favorilemek anlamsız: kalp yalnızca başkasının ilanında.
+                        if (kalp && i.saticiId != uidVarsa)
                           Positioned(
                             top: 8,
                             right: 8,

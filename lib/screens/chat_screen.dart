@@ -35,7 +35,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final k = await konusmaGetir(widget.konusmaId);
       if (k == null) throw 'Konuşma bulunamadı.';
-      _akis = db.from('messages').stream(primaryKey: ['id']).eq('conversation_id', widget.konusmaId).order('created_at');
+      _akis = db.from('messages').stream(primaryKey: ['id']).eq('conversation_id', widget.konusmaId).order('created_at', ascending: true);
       if (mounted) setState(() => _k = k);
       await okunduIsaretle(widget.konusmaId);
       app.sayaclariYenile();
@@ -44,15 +44,28 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Gönderilmekte olan mesajlar: sunucudan dönene kadar saat simgesiyle hemen görünür,
+  /// aynı metne ikinci kez basılırsa tekrar gönderilmez.
+  final _bekleyen = <Mesaj>[];
+  bool _saticiYazdi = false;
+  var _yerelNo = 0;
+
   Future<void> _gonder([String? hazir]) async {
     final m = (hazir ?? _mc.text).trim();
-    if (m.isEmpty) return;
+    if (m.isEmpty || _bekleyen.any((x) => x.metin == m)) return;
     if (hazir == null) _mc.clear();
+    final yerel = Mesaj(id: 'yerel-${_yerelNo++}', gonderen: uid ?? '', metin: m, zaman: DateTime.now());
+    setState(() => _bekleyen.add(yerel));
     try {
       await mesajGonder(widget.konusmaId, m);
     } catch (e) {
-      if (hazir == null) _mc.text = m;
+      if (hazir == null && _mc.text.isEmpty) _mc.text = m;
       if (mounted) bildir(context, 'Mesaj gönderilemedi. Kullanıcı seni veya sen onu engellemiş olabilirsin.');
+    } finally {
+      // Akış yeni mesajı getirene kadar kısa bir süre daha göster (çift görünmeyi önler).
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) setState(() => _bekleyen.remove(yerel));
+      });
     }
   }
 
@@ -146,9 +159,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetailScreen(ilanId: k.ilanId)));
               },
             ),
+            // Değerlendirme yalnızca gerçek bir görüşmeden sonra: satıcı en az bir kez yanıt vermiş olmalı.
             if (k.alici)
               ListTile(
+                enabled: _saticiYazdi,
                 title: const Text('Satıcıyı değerlendir', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: _saticiYazdi ? null : const Text('Satıcı sana yanıt verdikten sonra değerlendirebilirsin.'),
                 onTap: () {
                   Navigator.pop(ctx);
                   _degerlendir();
@@ -185,7 +201,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _degerlendir() async {
     final k = _k!;
-    var puan = 5;
+    var puan = 0; // Hazır seçili yıldız yok: kullanıcı kendisi seçmeli.
     final yorum = TextEditingController();
     final gonder = await showDialog<bool>(
       context: context,
@@ -200,6 +216,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   for (var i = 1; i <= 5; i++)
                     IconButton(
+                      tooltip: '$i yıldız',
                       onPressed: () => set(() => puan = i),
                       icon: Icon(i <= puan ? Icons.star : Icons.star_border, color: yildizRenk, size: 32),
                     ),
@@ -210,7 +227,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgeç')),
-            FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(100, 44)), onPressed: () => Navigator.pop(ctx, true), child: const Text('Gönder')),
+            FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(100, 44)), onPressed: puan == 0 ? null : () => Navigator.pop(ctx, true), child: const Text('Gönder')),
           ],
         ),
       ),
@@ -222,7 +239,7 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       final m = '$e';
       if (mounted) {
-        bildir(context, m.contains('duplicate') || m.contains('unique') ? 'Bu görüşme için zaten değerlendirme yaptın.' : 'Değerlendirme gönderilemedi. Önce satıcıya mesaj yazmış olmalısın.');
+        bildir(context, m.contains('duplicate') || m.contains('unique') ? 'Bu görüşme için zaten değerlendirme yaptın.' : 'Değerlendirme gönderilemedi. Satıcıyla karşılıklı mesajlaşmış olmalısın.');
       }
     }
   }
@@ -301,7 +318,8 @@ class _ChatScreenState extends State<ChatScreen> {
               builder: (context, s) {
                 if (s.hasError) return HataKutusu('Mesajlar yüklenemedi: ${s.error}\n(Gerçek zamanlı akış için 002_ek_ozellikler.sql çalışmış olmalı.)');
                 if (!s.hasData) return yukleniyor();
-                final liste = s.data!.map(Mesaj.json).toList();
+                final liste = s.data!.map(Mesaj.json).toList()..sort((a, b) => a.zaman.compareTo(b.zaman));
+                _saticiYazdi = liste.any((m) => m.gonderen == k.karsiId);
                 final okunmamis = liste.where((m) => m.gonderen != uid && m.okundu == null).length;
                 if (okunmamis != _okunmamisGorulen) {
                   _okunmamisGorulen = okunmamis;
@@ -314,10 +332,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     });
                   }
                 }
-                if (liste.isEmpty) {
+                // Sunucuya ulaşmış bekleyen mesajı ikinci kez gösterme.
+                final sonBenim = liste.where((m) => m.gonderen == uid).toList();
+                final bekleyen = _bekleyen.where((b) => !sonBenim.any((m) => m.metin == b.metin && !m.zaman.isBefore(b.zaman.subtract(const Duration(minutes: 2))))).toList();
+                if (liste.isEmpty && bekleyen.isEmpty) {
                   return const Center(child: Text('Konuşmayı başlatmak için bir mesaj yaz.', style: TextStyle(color: Renk.soluk)));
                 }
-                final ters = liste.reversed.toList();
+                // En yeni mesaj en altta: liste eskiden yeniye sıralı, ters çevrilmiş listede ilk öğe en yenidir.
+                final ters = [...liste, ...bekleyen].reversed.toList();
                 return ListView.builder(
                   reverse: true,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -347,7 +369,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           children: [
                             Text(m.metin, style: TextStyle(color: benim ? Colors.white : Renk.murekkep, fontSize: 15, height: 1.4)),
                             const SizedBox(height: 2),
-                            Text('${saat(m.zaman)}${benim ? (m.okundu != null ? ' ✓✓' : ' ✓') : ''}',
+                            Text('${saat(m.zaman)}${benim ? (m.id.startsWith('yerel-') ? ' …' : m.okundu != null ? ' ✓✓' : ' ✓') : ''}',
                                 style: TextStyle(fontSize: 11, color: benim ? Colors.white70 : Renk.soluk)),
                           ],
                         ),

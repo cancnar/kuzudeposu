@@ -11,8 +11,10 @@ import '../widgets.dart';
 
 /// İlan verme: 4 adım (hayvan → yaş/ağırlık/fiyat → konum/belgeler → fotoğraf/açıklama).
 /// Hatalar ilgili alanın altında gösterilir ve sayfa ilk hatalı alana kayar.
+/// [duzenle] verilirse aynı form mevcut ilanı düzenler (fotoğraf ve video değişmez).
 class SellScreen extends StatefulWidget {
-  const SellScreen({super.key});
+  const SellScreen({super.key, this.duzenle});
+  final Ilan? duzenle;
 
   @override
   State<SellScreen> createState() => _SellScreenState();
@@ -52,13 +54,41 @@ class _SellScreenState extends State<SellScreen> {
   bool _yukleniyor = false;
   String? _hata;
   final Map<String, String?> _h = {};
-  final Map<String, GlobalKey> _k = {for (final a in ['tur', 'cins', 'yas', 'kg', 'fiyat', 'konum', 'foto']) a: GlobalKey()};
+  final Map<String, GlobalKey> _k = {for (final a in ['tur', 'cins', 'yas', 'kg', 'fiyat', 'konum', 'foto', 'aciklama']) a: GlobalKey()};
   final _kaydirma = ScrollController();
 
   int get _adetGercek => _suru ? _adet : 1;
   String? get _turKodu => _tur == null ? null : turKod[_tur];
 
+  bool get _duzenleme => widget.duzenle != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final i = widget.duzenle;
+    if (i == null) return;
+    String yaz(double d) => d == d.roundToDouble() ? d.toInt().toString() : d.toString();
+    _tur = i.turAd;
+    _cins = i.cins;
+    _cinsiyet = i.cinsiyet;
+    _suru = i.adet > 1;
+    if (_suru) _adet = i.adet;
+    _satis = i.satisSekli;
+    _amac = i.amac;
+    _belgeler.addAll(i.belgeler);
+    _pazarlik = i.pazarlik;
+    _teslimat = i.teslimat;
+    _y1.text = '${i.yasMin}';
+    _y2.text = '${i.yasMax}';
+    _kg.text = yaz(i.agirlik);
+    _fiyat.text = yaz(i.toplam);
+    _acik.text = i.aciklama ?? '';
+    _il = ilBul(i.il)?.ad ?? i.il;
+    _ilce = ilceBul(_il, i.ilce)?.ad ?? i.ilce;
+  }
+
   bool get _degisti =>
+      _duzenleme ||
       _tur != null || _y1.text.isNotEmpty || _kg.text.isNotEmpty || _fiyat.text.isNotEmpty || _acik.text.isNotEmpty || _fotolar.isNotEmpty;
 
   String get _kgFiyat {
@@ -110,7 +140,11 @@ class _SellScreenState extends State<SellScreen> {
       case 2:
         if (_il == null || _ilce == null) h['konum'] = 'Hayvanın bulunduğu il ve ilçeyi seç.';
       case 3:
-        if (_fotolar.length < 3) h['foto'] = 'En az 3 fotoğraf ekle (şu an ${_fotolar.length}).';
+        if (!_duzenleme && _fotolar.length < 3) h['foto'] = 'En az 3 fotoğraf ekle (şu an ${_fotolar.length}).';
+        final riskli = metinSupheli(_acik.text);
+        if (riskli.contains('IBAN') || riskli.contains('Telefon numarası')) {
+          h['aciklama'] = 'Açıklamaya telefon numarası veya IBAN yazma. Alıcılar sana uygulamadan mesaj atar; numaran gizli kalır.';
+        }
     }
     h.removeWhere((_, v) => v == null);
     setState(() {
@@ -126,9 +160,18 @@ class _SellScreenState extends State<SellScreen> {
     return false;
   }
 
-  void _devam() {
+  Future<void> _devam() async {
     if (!_dogrula(_adim)) return;
     if (_adim == 3) {
+      if (metinSupheli(_acik.text).contains('Kapora / ön ödeme')) {
+        final ok = await onayIste(
+          context,
+          'Açıklamada kapora / ön ödeme geçiyor',
+          'Alıcıdan hayvanı görmeden kapora, havale veya EFT istemek şikâyet sebebidir ve ilanın gizlenebilir. Yine de yayınlansın mı?',
+          'Yine de yayınla',
+        );
+        if (!ok || !mounted) return;
+      }
       _yayinla();
       return;
     }
@@ -198,9 +241,7 @@ class _SellScreenState extends State<SellScreen> {
       _hata = null;
       _yukleniyor = true;
     });
-    try {
-      final yeniId = await ilanVer({
-        'seller_id': uid,
+    final alanlar = <String, dynamic>{
         'tur': _turKodu,
         'cins': _cins,
         'cinsiyet': _cinsiyet,
@@ -217,7 +258,19 @@ class _SellScreenState extends State<SellScreen> {
         'belgeler': _belgeler.toList(),
         'pazarlik': _pazarlik,
         'teslimat': _teslimat,
-      }, _fotolar, video: _video);
+    };
+    try {
+      if (_duzenleme) {
+        final i = widget.duzenle!;
+        await ilanGuncelle(i.id, alanlar);
+        final onayda = await ilanOnayBekliyor(i.id);
+        app.ilanlariYenile();
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
+        bildir(context, onayda ? 'Değişiklikler kaydedildi. İlan yönetici onayından sonra yayına çıkacak.' : 'Değişiklikler kaydedildi.');
+        return;
+      }
+      final yeniId = await ilanVer({'seller_id': uid, ...alanlar}, _fotolar, video: _video);
       final onayda = await ilanOnayBekliyor(yeniId);
       app.filtre = Filtre();
       app.arama = '';
@@ -227,9 +280,9 @@ class _SellScreenState extends State<SellScreen> {
       Navigator.of(context).pop();
       bildir(context, onayda ? 'İlanın alındı. Yönetici onayından sonra yayına çıkacak.' : 'İlanın yayınlandı. İlan sayfasındaki paylaş düğmesiyle WhatsApp\'ta paylaşabilirsin.');
     } on PostgrestException catch (e) {
-      setState(() => _hata = 'İlan yayınlanamadı: ${e.message}');
+      setState(() => _hata = '${_duzenleme ? 'Kaydedilemedi' : 'İlan yayınlanamadı'}: ${e.message}');
     } catch (err) {
-      setState(() => _hata = 'İlan yayınlanamadı: $err');
+      setState(() => _hata = '${_duzenleme ? 'Kaydedilemedi' : 'İlan yayınlanamadı'}: $err');
     } finally {
       if (mounted) setState(() => _yukleniyor = false);
     }
@@ -300,7 +353,9 @@ class _SellScreenState extends State<SellScreen> {
       });
 
   List<Widget> _adim0() {
-    final cinsler = cinsListesi[_tur] ?? [];
+    final liste = cinsListesi[_tur] ?? [];
+    // Düzenlenen ilanın cinsi listede yoksa (eski kayıt) yine de seçili görünsün.
+    final cinsler = [...liste, if (_cins != null && !liste.contains(_cins)) _cins!];
     return [
       _bolum('Hangi hayvanı satıyorsun?', ust: 4),
       KeyedSubtree(
@@ -466,6 +521,17 @@ class _SellScreenState extends State<SellScreen> {
           ),
         ),
         const SizedBox(height: 14),
+        if (_duzenleme) ...[
+          _etiket('Fotoğraflar'),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final u in widget.duzenle!.foto)
+              ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(u, width: 82, height: 82, fit: BoxFit.cover)),
+          ]),
+          const Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: Text('Fotoğraf ve video düzenlemede değişmez. Değiştirmek için ilanı silip yeniden ver.', style: TextStyle(color: Renk.soluk, fontSize: 13)),
+          ),
+        ] else ...[
         KeyedSubtree(key: _k['foto'], child: _etiket('Fotoğraflar (en az 3, en fazla 8)')),
         Wrap(
           spacing: 8,
@@ -514,6 +580,7 @@ class _SellScreenState extends State<SellScreen> {
           ],
         ),
         _hataYazi('foto'),
+        ],
         const SizedBox(height: 10),
         Container(
           padding: const EdgeInsets.all(10),
@@ -524,8 +591,10 @@ class _SellScreenState extends State<SellScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        _etiket('Video (isteğe bağlı · en fazla 60 sn, 50 MB)'),
-        if (_video == null)
+        if (!_duzenleme) _etiket('Video (isteğe bağlı · en fazla 60 sn, 50 MB)'),
+        if (_duzenleme)
+          const SizedBox.shrink()
+        else if (_video == null)
           OutlinedButton.icon(onPressed: _videoEkle, icon: const Icon(Icons.videocam_outlined), label: const Text('Video ekle'))
         else
           Container(
@@ -545,13 +614,19 @@ class _SellScreenState extends State<SellScreen> {
           ),
         const SizedBox(height: 16),
         TextField(
+          key: _k['aciklama'],
           controller: _acik,
           maxLines: 4,
           maxLength: 2000,
-          decoration: const InputDecoration(
+          onChanged: (_) {
+            if (_h.containsKey('aciklama')) setState(() => _h.remove('aciklama'));
+          },
+          decoration: InputDecoration(
             labelText: 'Açıklama (isteğe bağlı)',
             hintText: 'Sağlık durumu, aşılar, besleme, gebelik, teslim şekli…',
             alignLabelWithHint: true,
+            errorText: _h['aciklama'],
+            errorMaxLines: 3,
           ),
         ),
       ];
@@ -570,7 +645,7 @@ class _SellScreenState extends State<SellScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Row(children: [
-            const Text('İlan ver'),
+            Text(_duzenleme ? 'İlanı düzenle' : 'İlan ver'),
             if (_suru)
               Container(
                 margin: const EdgeInsets.only(left: 10),
@@ -632,7 +707,7 @@ class _SellScreenState extends State<SellScreen> {
                     onPressed: _yukleniyor ? null : _devam,
                     child: _yukleniyor
                         ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(_adim == 3 ? 'İlanı yayınla' : 'Devam'),
+                        : Text(_adim == 3 ? (_duzenleme ? 'Değişiklikleri kaydet' : 'İlanı yayınla') : 'Devam'),
                   ),
                 ),
               ),

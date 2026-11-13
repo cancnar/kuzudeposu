@@ -11,6 +11,7 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'chat_screen.dart';
 import 'satici_screen.dart';
+import 'sell_screen.dart';
 import 'phone_screen.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -24,6 +25,8 @@ class DetailScreen extends StatefulWidget {
 
 class _DetailScreenState extends State<DetailScreen> {
   Ilan? _i;
+  // _i yeniden yüklenmek için null yapıldığında (ör. süre uzatma) kimlik buradan alınır.
+  late final String _ilanId = widget.ilan?.id ?? widget.ilanId!;
   List<Map<String, dynamic>> _yorumlar = [];
   bool _yuk = true;
   Object? _hata;
@@ -45,7 +48,7 @@ class _DetailScreenState extends State<DetailScreen> {
     });
     try {
       if (_i == null) {
-        _i = await ilanGetir(widget.ilanId!);
+        _i = await ilanGetir(_ilanId);
         if (_i == null) throw 'İlan bulunamadı veya yayından kaldırıldı.';
       } else if (_i!.foto.isEmpty) {
         await fotolariDoldur([_i!]);
@@ -328,6 +331,32 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  /// Satılmış veya yönetici tarafından kaldırılmış/gizlenmiş ilan düzenlenmez.
+  bool _duzenlenebilir(Ilan i) => i.durum != 'satildi' && (i.moderasyon == null || i.moderasyon == 'onay_bekliyor');
+
+  Future<void> _duzenle(Ilan i) async {
+    final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => SellScreen(duzenle: i)));
+    if (ok != true || !mounted) return;
+    try {
+      final yeni = await ilanGetir(i.id);
+      if (yeni != null && mounted) setState(() => _i = yeni);
+    } catch (_) {}
+  }
+
+  Future<void> _geriCek(Ilan i) async {
+    final ok = await onayIste(context, 'İlan geri çekilsin mi?', 'İlan ve fotoğrafları silinir; onay sırasından çıkar. Bu işlem geri alınamaz.', 'Geri çek', tehlike: true);
+    if (!ok) return;
+    try {
+      await ilanSil(i.id);
+      app.ilanlariYenile();
+      if (!mounted) return;
+      bildir(context, 'İlan geri çekildi');
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) bildir(context, 'İlan silinemedi: $e');
+    }
+  }
+
   Future<void> _durum(String d, String mesaj) async {
     try {
       await ilanDurumu(_i!.id, d);
@@ -463,16 +492,26 @@ class _DetailScreenState extends State<DetailScreen> {
                       top: MediaQuery.of(context).padding.top + 10,
                       child: YuzenDugme(ikon: Icons.ios_share_rounded, ipucu: 'Paylaş', renk: Renk.murekkep, onPressed: () => ilanPaylas(context, i)),
                     ),
+                    if (_benim && _duzenlenebilir(i))
+                      Positioned(
+                        right: 64,
+                        top: MediaQuery.of(context).padding.top + 10,
+                        child: YuzenDugme(ikon: Icons.edit_outlined, ipucu: 'İlanı düzenle', renk: Renk.murekkep, onPressed: () => _duzenle(i)),
+                      ),
                     if (!_benim)
                       Positioned(
                         right: 12,
                         top: MediaQuery.of(context).padding.top + 10,
-                        child: YuzenDugme(
-                          ikon: app.favoriler.contains(i.id) ? Icons.favorite : Icons.favorite_border,
-                          ipucu: app.favoriler.contains(i.id) ? 'Favorilerden çıkar' : 'Favorilere ekle',
-                          renk: Renk.kiremit,
-                          titresim: true,
-                          onPressed: _favori,
+                        // Favori durumu uygulama genelinde tutulur; değişince bu düğme yeniden çizilir.
+                        child: ListenableBuilder(
+                          listenable: app,
+                          builder: (_, __) => YuzenDugme(
+                            ikon: app.favoriler.contains(i.id) ? Icons.favorite : Icons.favorite_border,
+                            ipucu: app.favoriler.contains(i.id) ? 'Favorilerden çıkar' : 'Favorilere ekle',
+                            renk: Renk.kiremit,
+                            titresim: true,
+                            onPressed: _favori,
+                          ),
                         ),
                       ),
                     if (i.videoVar)
@@ -586,7 +625,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                       SizedBox(width: 4),
                                       Flexible(child: Text('Telefonu doğrulanmış', style: TextStyle(color: Renk.okYazi, fontSize: 13, fontWeight: FontWeight.w700))),
                                     ]),
-                                    if (_guven != null)
+                                    if (_guven != null && !_benim)
                                       Text(
                                         _guven!.yeni
                                             ? 'Yeni üye · henüz satışı yok, dikkatli ol'
@@ -660,6 +699,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                                 ),
                               ),
+                              if (i.moderasyon == 'onay_bekliyor')
+                                TextButton(onPressed: () => _geriCek(i), child: const Text('Geri çek', style: TextStyle(color: Renk.kiremit))),
                             ]),
                           )
                         else

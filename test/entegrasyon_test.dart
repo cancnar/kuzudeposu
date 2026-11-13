@@ -87,6 +87,20 @@ void main() {
         final c = await ilanAra('zzzyok', Filtre());
         sart(c.isEmpty, 'olmayan aramada sonuç geldi');
       });
+      await adim('misafir: eş anlamlı arama ve il + mesafe (011)', () async {
+        final k = await ilanAra('koyun', Filtre());
+        if (k.isEmpty) {
+          sonuc.add('   bilgi: "koyun" sonuç vermedi; 011 çalıştırılmamış olabilir');
+        } else {
+          sart(k.every((i) => i.tur == 'kucukbas' && !i.cins.toLowerCase().contains('keçi')), '"koyun" araması küçükbaş koyun dışı ilan getirdi');
+        }
+        final b = await ilanAra('inek', Filtre());
+        sart(b.every((i) => i.tur == 'buyukbas'), '"inek" araması büyükbaş dışı ilan getirdi (ör. "binek")');
+        final sadece = await ilanAra('', Filtre({'il': 'Manisa'}));
+        final yaricap = await ilanAra('', Filtre({'il': 'Manisa', 'mesafe': '100'}));
+        final eksik = sadece.where((i) => !yaricap.any((y) => y.id == i.id)).map((i) => i.ilce).toList();
+        if (eksik.isNotEmpty) sonuc.add('   bilgi: Manisa · 100 km, ildeki şu ilçeleri kapsamadı: $eksik (011 çalıştırılmamış olabilir)');
+      });
       await adim('misafir: tüm filtreler birlikte (hata vermemeli)', () async {
         await ilanAra('a', Filtre({
           'tur': 'Küçükbaş', 'cins': 'Ak', 'satis': 'Sürü', 'adetMin': '2', 'adetMax': '500', 'yasMin': '1', 'yasMax': '60',
@@ -274,8 +288,11 @@ void main() {
           await adim('mesajlaşma: okundu işareti', () async {
             await okunduIsaretle(konId!);
           });
-          await adim('yorum yaz + satıcı puanı güncellensin', () async {
-            await yorumYaz(konId!, hedef.saticiId, 4, 'CI yorumu');
+          await adim('yorum: satıcı yanıt vermeden yazılamaz (011)', () async {
+            // Örnek satıcı hiç yanıt vermediği için 011'den sonra değerlendirme reddedilmeli.
+            final yazildi = await yorumYaz(konId!, hedef.saticiId, 4, 'CI yorumu').then((_) => true).catchError((_) => false);
+            if (!yazildi) return;
+            sonuc.add('   bilgi: 011 çalıştırılmamış; satıcı yanıtı olmadan yorum yazılabiliyor (eski kural)');
             final y = await yorumlar(hedef.saticiId);
             sart(y.any((e) => e['comment'] == 'CI yorumu'), 'yorum listede yok');
             final ikinci = await db.from('reviews').insert({'conversation_id': konId, 'reviewer_id': uid, 'seller_id': hedef.saticiId, 'rating': 5}).then((_) => true).catchError((_) => false);

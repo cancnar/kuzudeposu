@@ -54,17 +54,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         title: const Text('Bildirimler'),
         actions: [
-          TextButton(
-            onPressed: () async {
-              try {
-                await hepsiniOkundu();
-                app.sayaclariYenile();
-                setState(() { _f = bildirimler(); });
-              } catch (e) {
-                if (mounted) bildir(context, 'İşlem yapılamadı: $e');
-              }
-            },
-            child: const Text('Tümünü okundu say'),
+          // Okunmamış bildirim yoksa düğme gösterilmez; ikon olduğu için başlığı da kesmez.
+          ListenableBuilder(
+            listenable: app,
+            builder: (_, __) => app.okunmamisBildirim == 0
+                ? const SizedBox.shrink()
+                : IconButton(
+                    tooltip: 'Tümünü okundu say',
+                    icon: const Icon(Icons.done_all_rounded),
+                    onPressed: () async {
+                      try {
+                        await hepsiniOkundu();
+                        app.sayaclariYenile();
+                        setState(() { _f = bildirimler(); });
+                      } catch (e) {
+                        if (mounted) bildir(context, 'İşlem yapılamadı: $e');
+                      }
+                    },
+                  ),
           ),
         ],
       ),

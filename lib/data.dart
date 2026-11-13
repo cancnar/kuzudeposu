@@ -35,7 +35,7 @@ Future<void> fotolariDoldur(List<Ilan> liste) async {
       .from('listing_photos')
       .select('listing_id,path,sort_order')
       .inFilter('listing_id', liste.map((e) => e.id).toList())
-      .order('sort_order');
+      .order('sort_order', ascending: true);
   final harita = <String, List<String>>{};
   for (final x in r) {
     (harita[x['listing_id'] as String] ??= []).add(fotoUrl(x['path'] as String));
@@ -46,7 +46,16 @@ Future<void> fotolariDoldur(List<Ilan> liste) async {
 }
 
 Future<List<Ilan>> ilanAra(String q, Filtre f) async {
-  final r = (await db.rpc('search_listings', params: f.rpc(q))) as List<dynamic>;
+  final p = f.rpc(q);
+  List<dynamic> r;
+  try {
+    r = (await db.rpc('search_listings', params: p)) as List<dynamic>;
+  } on PostgrestException {
+    // 011 henüz çalıştırılmadıysa yeni parametre tanınmaz: onsuz tekrar dene.
+    if (!p.containsKey('p_il_veya')) rethrow;
+    p.remove('p_il_veya');
+    r = (await db.rpc('search_listings', params: p)) as List<dynamic>;
+  }
   final liste = r.map((e) {
     final m = e as Map<String, dynamic>;
     return Ilan.json(
@@ -184,6 +193,21 @@ Future<bool> ilanOnayBekliyor(String id) async {
 }
 
 Future<void> ilanDurumu(String id, String durum) => db.from('listings').update({'durum': durum}).eq('id', id);
+
+/// Satıcı kendi ilanının bilgilerini günceller (fotoğraf ve video değişmez).
+Future<void> ilanGuncelle(String id, Map<String, dynamic> alanlar) => db.from('listings').update(alanlar).eq('id', id);
+
+/// Satıcı ilanını tamamen siler (ör. onay bekleyen ilanı geri çekmek). Fotoğraf dosyaları da temizlenir.
+Future<void> ilanSil(String id) async {
+  final r = await db.from('listing_photos').select('path').eq('listing_id', id);
+  final yollar = [for (final x in r) x['path'] as String];
+  await db.from('listings').delete().eq('id', id);
+  if (yollar.isNotEmpty) {
+    try {
+      await db.storage.from('listing-photos').remove(yollar);
+    } catch (_) {}
+  }
+}
 
 // ---- Mesajlaşma ----
 const _konSecim =

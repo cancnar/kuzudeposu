@@ -370,6 +370,8 @@ class Filtre {
         p['p_lat'] = merkez.lat;
         p['p_lng'] = merkez.lng;
         p['p_radius_km'] = int.tryParse(this['mesafe']) ?? 100;
+        // Sadece il seçildiyse merkezden uzak ilçeleri de dahil et (011).
+        if (yer!.ilce == null) p['p_il_veya'] = yer.il;
       } else {
         p['p_il'] = yer == null ? this['il'].trim() : (yer.ilce ?? yer.il);
       }
@@ -538,4 +540,16 @@ class YoneticiOzet {
 
   /// 009 moderasyon sayıları (yoksa null).
   Map<String, dynamic>? get moderasyon => (ham['moderasyon'] as Map?)?.cast<String, dynamic>();
+}
+
+/// İlan açıklamasındaki riskli içerik (SQL'deki metin_supheli ile aynı kurallar).
+/// Dönen liste: 'IBAN', 'Telefon numarası', 'Kapora / ön ödeme'.
+List<String> metinSupheli(String metin) {
+  final t = trNorm(metin);
+  final iban = RegExp(r'tr\s*\d{2}(\s*\d){20,24}');
+  final n = <String>[];
+  if (iban.hasMatch(t) || RegExp(r'\biban\b').hasMatch(t)) n.add('IBAN');
+  if (RegExp(r'(\+?\s*90|0)?[\s(]*5\d{2}[\s).-]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}').hasMatch(t.replaceAll(iban, ''))) n.add('Telefon numarası');
+  if (RegExp(r'(kapora|kaparo|on ?odeme|pesin odeme|havale|\beft\b|kargo ?ucreti)').hasMatch(t)) n.add('Kapora / ön ödeme');
+  return n;
 }
